@@ -1,0 +1,1429 @@
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Plane, MapPin, Calendar, DollarSign, Compass, Users, LogOut,
+  Plus, Search, Check, AlertTriangle, Sparkles, Clock, Trash2,
+  ArrowRight, ArrowLeft, Wallet, Wand2, Image as ImageIcon, X
+} from "lucide-react";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis
+} from "recharts";
+
+/* ------------------------------------------------------------------ */
+/* Mock "world data" — stands in for a cities/activities API          */
+/* ------------------------------------------------------------------ */
+
+const VIBES = [
+  { name: "Relaxing", color: "#3E7C8A" },
+  { name: "Adventure", color: "#C1502E" },
+  { name: "Food", color: "#D9A441" },
+  { name: "Culture", color: "#7A5C8E" },
+  { name: "Nature", color: "#2F5233" },
+  { name: "Nightlife", color: "#A63D5B" },
+];
+
+const CITIES = [
+  { id: "delhi", name: "Delhi", country: "India", region: "North", teaser: "Historic capital with landmarks from many eras", costIndex: 45, popularity: 5, tags: ["Heritage", "Food", "Shopping"], image: "https://loremflickr.com/640/400/redfort,delhi", attractions: [{ name: "Red Fort", type: "Landmark" }, { name: "India Gate", type: "Landmark" }, { name: "Qutub Minar", type: "Landmark" }, { name: "Delhi Temple Complex", type: "Temple" }, { name: "Delhi Local Bazaar", type: "Shopping" }, { name: "Delhi Street Food Lane", type: "Food" }, { name: "Delhi Heritage Haveli Walk", type: "Heritage" }, { name: "Delhi City Museum", type: "Museum" }, { name: "Delhi Sunset Viewpoint", type: "Viewpoint" }, { name: "Delhi Botanical Garden", type: "Nature" }] },
+  { id: "agra", name: "Agra", country: "India", region: "North", teaser: "Home to the Taj Mahal", costIndex: 45, popularity: 5, tags: ["Heritage", "Photography"], image: "https://loremflickr.com/640/400/tajmahal,agra", attractions: [{ name: "Taj Mahal", type: "Landmark" }, { name: "Agra Fort", type: "Landmark" }, { name: "Mehtab Bagh", type: "Landmark" }, { name: "Agra Temple Complex", type: "Temple" }, { name: "Agra Local Bazaar", type: "Shopping" }, { name: "Agra Street Food Lane", type: "Food" }, { name: "Agra Heritage Haveli Walk", type: "Heritage" }, { name: "Agra City Museum", type: "Museum" }, { name: "Agra Sunset Viewpoint", type: "Viewpoint" }, { name: "Agra Botanical Garden", type: "Nature" }] },
+  { id: "jaipur", name: "Jaipur", country: "India", region: "North", teaser: "Known as the Pink City and has 3 UNESCO World Heritage sites", costIndex: 45, popularity: 5, tags: ["Heritage", "Shopping", "Food"], image: "https://loremflickr.com/640/400/amberfort,jaipur", attractions: [{ name: "Amber Fort", type: "Landmark" }, { name: "Hawa Mahal", type: "Landmark" }, { name: "City Palace", type: "Landmark" }, { name: "Jaipur Temple Complex", type: "Temple" }, { name: "Jaipur Local Bazaar", type: "Shopping" }, { name: "Jaipur Street Food Lane", type: "Food" }, { name: "Jaipur Heritage Haveli Walk", type: "Heritage" }, { name: "Jaipur City Museum", type: "Museum" }, { name: "Jaipur Sunset Viewpoint", type: "Viewpoint" }, { name: "Jaipur Botanical Garden", type: "Nature" }] },
+  { id: "varanasi", name: "Varanasi", country: "India", region: "North", teaser: "One of the world's oldest continuously inhabited cities", costIndex: 25, popularity: 5, tags: ["Boat rides", "Culture", "Heritage"], image: "https://loremflickr.com/640/400/gangesghats,varanasi", attractions: [{ name: "Ganges Ghats", type: "Landmark" }, { name: "Kashi Vishwanath", type: "Landmark" }, { name: "Sarnath", type: "Landmark" }, { name: "Varanasi Temple Complex", type: "Temple" }, { name: "Varanasi Local Bazaar", type: "Shopping" }, { name: "Varanasi Street Food Lane", type: "Food" }, { name: "Varanasi Heritage Haveli Walk", type: "Heritage" }, { name: "Varanasi City Museum", type: "Museum" }, { name: "Varanasi Sunset Viewpoint", type: "Viewpoint" }, { name: "Varanasi Botanical Garden", type: "Nature" }] },
+  { id: "amritsar", name: "Amritsar", country: "India", region: "North", teaser: "Home to the famous Golden Temple", costIndex: 45, popularity: 5, tags: ["Heritage", "Food", "Culture"], image: "https://loremflickr.com/640/400/goldentemple,amritsar", attractions: [{ name: "Golden Temple", type: "Landmark" }, { name: "Jallianwala Bagh", type: "Landmark" }, { name: "Wagah Border", type: "Landmark" }, { name: "Amritsar Temple Complex", type: "Temple" }, { name: "Amritsar Local Bazaar", type: "Shopping" }, { name: "Amritsar Street Food Lane", type: "Food" }, { name: "Amritsar Heritage Haveli Walk", type: "Heritage" }, { name: "Amritsar City Museum", type: "Museum" }, { name: "Amritsar Sunset Viewpoint", type: "Viewpoint" }, { name: "Amritsar Botanical Garden", type: "Nature" }] },
+  { id: "kashmir", name: "Srinagar", country: "India", region: "North", teaser: "Famous as the gateway to Kashmir's scenic landscapes", costIndex: 90, popularity: 4, tags: ["Shikara rides", "Sightseeing", "Nature"], image: "https://loremflickr.com/640/400/dallake,srinagar", attractions: [{ name: "Dal Lake", type: "Landmark" }, { name: "Mughal Gardens", type: "Landmark" }, { name: "Shankaracharya Temple", type: "Landmark" }, { name: "Srinagar Temple Complex", type: "Temple" }, { name: "Srinagar Local Bazaar", type: "Shopping" }, { name: "Srinagar Street Food Lane", type: "Food" }, { name: "Srinagar Heritage Haveli Walk", type: "Heritage" }, { name: "Srinagar City Museum", type: "Museum" }, { name: "Srinagar Sunset Viewpoint", type: "Viewpoint" }, { name: "Srinagar Botanical Garden", type: "Nature" }] },
+  { id: "manali", name: "Manali", country: "India", region: "North", teaser: "One of India's best-known Himalayan getaways", costIndex: 90, popularity: 4, tags: ["Hiking", "Sightseeing", "Snow activities"], image: "https://loremflickr.com/640/400/solangvalley,manali", attractions: [{ name: "Solang Valley", type: "Landmark" }, { name: "Hadimba Temple", type: "Landmark" }, { name: "Old Manali", type: "Landmark" }, { name: "Manali Temple Complex", type: "Temple" }, { name: "Manali Local Bazaar", type: "Shopping" }, { name: "Manali Street Food Lane", type: "Food" }, { name: "Manali Heritage Haveli Walk", type: "Heritage" }, { name: "Manali City Museum", type: "Museum" }, { name: "Manali Sunset Viewpoint", type: "Viewpoint" }, { name: "Manali Botanical Garden", type: "Nature" }] },
+  { id: "rishikesh", name: "Rishikesh", country: "India", region: "North", teaser: "Known worldwide for yoga and spiritual retreats", costIndex: 45, popularity: 4, tags: ["Yoga", "Rafting", "Hiking"], image: "https://loremflickr.com/640/400/laxmanjhulaarea,rishikesh", attractions: [{ name: "Laxman Jhula area", type: "Landmark" }, { name: "Ganga Ghats", type: "Landmark" }, { name: "Beatles Ashram", type: "Landmark" }, { name: "Rishikesh Temple Complex", type: "Temple" }, { name: "Rishikesh Local Bazaar", type: "Shopping" }, { name: "Rishikesh Street Food Lane", type: "Food" }, { name: "Rishikesh Heritage Haveli Walk", type: "Heritage" }, { name: "Rishikesh City Museum", type: "Museum" }, { name: "Rishikesh Sunset Viewpoint", type: "Viewpoint" }, { name: "Rishikesh Botanical Garden", type: "Nature" }] },
+  { id: "mumbai", name: "Mumbai", country: "India", region: "West", teaser: "India's financial capital and Bollywood centre", costIndex: 90, popularity: 5, tags: ["Food", "Nightlife", "Heritage"], image: "https://loremflickr.com/640/400/gatewayofindia,mumbai", attractions: [{ name: "Gateway of India", type: "Landmark" }, { name: "Marine Drive", type: "Landmark" }, { name: "Elephanta Caves", type: "Landmark" }, { name: "Mumbai Temple Complex", type: "Temple" }, { name: "Mumbai Local Bazaar", type: "Shopping" }, { name: "Mumbai Street Food Lane", type: "Food" }, { name: "Mumbai Heritage Haveli Walk", type: "Heritage" }, { name: "Mumbai City Museum", type: "Museum" }, { name: "Mumbai Sunset Viewpoint", type: "Viewpoint" }, { name: "Mumbai Botanical Garden", type: "Nature" }] },
+  { id: "goa", name: "Goa", country: "India", region: "West", teaser: "Combines Indian and Portuguese cultural influences", costIndex: 90, popularity: 5, tags: ["Beaches", "Food", "Sightseeing"], image: "https://loremflickr.com/640/400/bagabeach,goa", attractions: [{ name: "Baga Beach", type: "Landmark" }, { name: "Fort Aguada", type: "Landmark" }, { name: "Basilica of Bom Jesus", type: "Landmark" }, { name: "Goa Temple Complex", type: "Temple" }, { name: "Goa Local Bazaar", type: "Shopping" }, { name: "Goa Street Food Lane", type: "Food" }, { name: "Goa Heritage Haveli Walk", type: "Heritage" }, { name: "Goa City Museum", type: "Museum" }, { name: "Goa Sunset Viewpoint", type: "Viewpoint" }, { name: "Goa Botanical Garden", type: "Nature" }] },
+  { id: "udaipur", name: "Udaipur", country: "India", region: "West", teaser: "Known as the City of Lakes", costIndex: 90, popularity: 5, tags: ["Boat rides", "Heritage", "Photography"], image: "https://loremflickr.com/640/400/lakepichola,udaipur", attractions: [{ name: "Lake Pichola", type: "Landmark" }, { name: "City Palace", type: "Landmark" }, { name: "Sajjangarh", type: "Landmark" }, { name: "Udaipur Temple Complex", type: "Temple" }, { name: "Udaipur Local Bazaar", type: "Shopping" }, { name: "Udaipur Street Food Lane", type: "Food" }, { name: "Udaipur Heritage Haveli Walk", type: "Heritage" }, { name: "Udaipur City Museum", type: "Museum" }, { name: "Udaipur Sunset Viewpoint", type: "Viewpoint" }, { name: "Udaipur Botanical Garden", type: "Nature" }] },
+  { id: "jodhpur", name: "Jodhpur", country: "India", region: "West", teaser: "Famous for its blue-painted old city", costIndex: 45, popularity: 4, tags: ["Heritage", "Photography", "Food"], image: "https://loremflickr.com/640/400/mehrangarhfort,jodhpur", attractions: [{ name: "Mehrangarh Fort", type: "Landmark" }, { name: "Blue City", type: "Landmark" }, { name: "Jaswant Thada", type: "Landmark" }, { name: "Jodhpur Temple Complex", type: "Temple" }, { name: "Jodhpur Local Bazaar", type: "Shopping" }, { name: "Jodhpur Street Food Lane", type: "Food" }, { name: "Jodhpur Heritage Haveli Walk", type: "Heritage" }, { name: "Jodhpur City Museum", type: "Museum" }, { name: "Jodhpur Sunset Viewpoint", type: "Viewpoint" }, { name: "Jodhpur Botanical Garden", type: "Nature" }] },
+  { id: "jaisalmer", name: "Jaisalmer", country: "India", region: "West", teaser: "Known as the Golden City because of its sandstone architecture", costIndex: 90, popularity: 4, tags: ["Desert sightseeing", "Cultural experiences"], image: "https://loremflickr.com/640/400/jaisalmerfort,jaisalmer", attractions: [{ name: "Jaisalmer Fort", type: "Landmark" }, { name: "Patwon Ki Haveli", type: "Landmark" }, { name: "Sam Sand Dunes", type: "Landmark" }, { name: "Jaisalmer Temple Complex", type: "Temple" }, { name: "Jaisalmer Local Bazaar", type: "Shopping" }, { name: "Jaisalmer Street Food Lane", type: "Food" }, { name: "Jaisalmer Heritage Haveli Walk", type: "Heritage" }, { name: "Jaisalmer City Museum", type: "Museum" }, { name: "Jaisalmer Sunset Viewpoint", type: "Viewpoint" }, { name: "Jaisalmer Botanical Garden", type: "Nature" }] },
+  { id: "ahmedabad", name: "Ahmedabad", country: "India", region: "West", teaser: "India's first UNESCO World Heritage City", costIndex: 25, popularity: 4, tags: ["Heritage", "Food", "Architecture"], image: "https://loremflickr.com/640/400/sabarmatiashram,ahmedabad", attractions: [{ name: "Sabarmati Ashram", type: "Landmark" }, { name: "Adalaj Stepwell", type: "Landmark" }, { name: "Old City", type: "Landmark" }, { name: "Ahmedabad Temple Complex", type: "Temple" }, { name: "Ahmedabad Local Bazaar", type: "Shopping" }, { name: "Ahmedabad Street Food Lane", type: "Food" }, { name: "Ahmedabad Heritage Haveli Walk", type: "Heritage" }, { name: "Ahmedabad City Museum", type: "Museum" }, { name: "Ahmedabad Sunset Viewpoint", type: "Viewpoint" }, { name: "Ahmedabad Botanical Garden", type: "Nature" }] },
+  { id: "kolkata", name: "Kolkata", country: "India", region: "East", teaser: "Famous for literature, art and colonial heritage", costIndex: 45, popularity: 4, tags: ["Culture", "Food", "Heritage"], image: "https://loremflickr.com/640/400/victoriamemorial,kolkata", attractions: [{ name: "Victoria Memorial", type: "Landmark" }, { name: "Howrah Bridge", type: "Landmark" }, { name: "Indian Museum", type: "Landmark" }, { name: "Kolkata Temple Complex", type: "Temple" }, { name: "Kolkata Local Bazaar", type: "Shopping" }, { name: "Kolkata Street Food Lane", type: "Food" }, { name: "Kolkata Heritage Haveli Walk", type: "Heritage" }, { name: "Kolkata City Museum", type: "Museum" }, { name: "Kolkata Sunset Viewpoint", type: "Viewpoint" }, { name: "Kolkata Botanical Garden", type: "Nature" }] },
+  { id: "darjeeling", name: "Darjeeling", country: "India", region: "East", teaser: "Famous worldwide for its tea and Himalayan views", costIndex: 90, popularity: 4, tags: ["Tea tours", "Sightseeing", "Hiking"], image: "https://loremflickr.com/640/400/tigerhill,darjeeling", attractions: [{ name: "Tiger Hill", type: "Landmark" }, { name: "Batasia Loop", type: "Landmark" }, { name: "Himalayan Railway", type: "Landmark" }, { name: "Darjeeling Temple Complex", type: "Temple" }, { name: "Darjeeling Local Bazaar", type: "Shopping" }, { name: "Darjeeling Street Food Lane", type: "Food" }, { name: "Darjeeling Heritage Haveli Walk", type: "Heritage" }, { name: "Darjeeling City Museum", type: "Museum" }, { name: "Darjeeling Sunset Viewpoint", type: "Viewpoint" }, { name: "Darjeeling Botanical Garden", type: "Nature" }] },
+  { id: "puri", name: "Puri", country: "India", region: "East", teaser: "One of India's major pilgrimage destinations", costIndex: 45, popularity: 3, tags: ["Heritage", "Beach", "Culture"], image: "https://loremflickr.com/640/400/jagannathtemple,puri", attractions: [{ name: "Jagannath Temple", type: "Landmark" }, { name: "Puri Beach", type: "Landmark" }, { name: "Konark (nearby)", type: "Landmark" }, { name: "Puri Temple Complex", type: "Temple" }, { name: "Puri Local Bazaar", type: "Shopping" }, { name: "Puri Street Food Lane", type: "Food" }, { name: "Puri Heritage Haveli Walk", type: "Heritage" }, { name: "Puri City Museum", type: "Museum" }, { name: "Puri Sunset Viewpoint", type: "Viewpoint" }, { name: "Puri Botanical Garden", type: "Nature" }] },
+  { id: "guwahati", name: "Guwahati", country: "India", region: "Northeast", teaser: "Major gateway to India's Northeast", costIndex: 45, popularity: 3, tags: ["River cruises", "Culture", "Sightseeing"], image: "https://loremflickr.com/640/400/kamakhyatemple,guwahati", attractions: [{ name: "Kamakhya Temple", type: "Landmark" }, { name: "Brahmaputra River", type: "Landmark" }, { name: "Umananda Island", type: "Landmark" }, { name: "Guwahati Temple Complex", type: "Temple" }, { name: "Guwahati Local Bazaar", type: "Shopping" }, { name: "Guwahati Street Food Lane", type: "Food" }, { name: "Guwahati Heritage Haveli Walk", type: "Heritage" }, { name: "Guwahati City Museum", type: "Museum" }, { name: "Guwahati Sunset Viewpoint", type: "Viewpoint" }, { name: "Guwahati Botanical Garden", type: "Nature" }] },
+  { id: "gangtok", name: "Gangtok", country: "India", region: "Northeast", teaser: "A Himalayan city surrounded by mountain scenery", costIndex: 90, popularity: 3, tags: ["Mountain sightseeing", "Culture", "Hiking"], image: "https://loremflickr.com/640/400/mgmarg,gangtok", attractions: [{ name: "MG Marg", type: "Landmark" }, { name: "Rumtek Monastery", type: "Landmark" }, { name: "Tsomgo Lake", type: "Landmark" }, { name: "Gangtok Temple Complex", type: "Temple" }, { name: "Gangtok Local Bazaar", type: "Shopping" }, { name: "Gangtok Street Food Lane", type: "Food" }, { name: "Gangtok Heritage Haveli Walk", type: "Heritage" }, { name: "Gangtok City Museum", type: "Museum" }, { name: "Gangtok Sunset Viewpoint", type: "Viewpoint" }, { name: "Gangtok Botanical Garden", type: "Nature" }] },
+  { id: "bengaluru", name: "Bengaluru", country: "India", region: "South", teaser: "Known as India's Silicon Valley", costIndex: 45, popularity: 4, tags: ["Food", "Parks", "Nightlife"], image: "https://loremflickr.com/640/400/bangalorepalace,bengaluru", attractions: [{ name: "Bangalore Palace", type: "Landmark" }, { name: "Lalbagh", type: "Landmark" }, { name: "Cubbon Park", type: "Landmark" }, { name: "Bengaluru Temple Complex", type: "Temple" }, { name: "Bengaluru Local Bazaar", type: "Shopping" }, { name: "Bengaluru Street Food Lane", type: "Food" }, { name: "Bengaluru Heritage Haveli Walk", type: "Heritage" }, { name: "Bengaluru City Museum", type: "Museum" }, { name: "Bengaluru Sunset Viewpoint", type: "Viewpoint" }, { name: "Bengaluru Botanical Garden", type: "Nature" }] },
+  { id: "hyderabad", name: "Hyderabad", country: "India", region: "South", teaser: "Famous for combining historic monuments with a major food culture", costIndex: 45, popularity: 4, tags: ["Heritage", "Food", "Shopping"], image: "https://loremflickr.com/640/400/charminar,hyderabad", attractions: [{ name: "Charminar", type: "Landmark" }, { name: "Golconda Fort", type: "Landmark" }, { name: "Hussain Sagar", type: "Landmark" }, { name: "Hyderabad Temple Complex", type: "Temple" }, { name: "Hyderabad Local Bazaar", type: "Shopping" }, { name: "Hyderabad Street Food Lane", type: "Food" }, { name: "Hyderabad Heritage Haveli Walk", type: "Heritage" }, { name: "Hyderabad City Museum", type: "Museum" }, { name: "Hyderabad Sunset Viewpoint", type: "Viewpoint" }, { name: "Hyderabad Botanical Garden", type: "Nature" }] },
+  { id: "kochi", name: "Kochi", country: "India", region: "South", teaser: "Historic trading port with strong multicultural influences", costIndex: 45, popularity: 4, tags: ["Heritage", "Food", "Backwaters"], image: "https://loremflickr.com/640/400/fortkochi,kochi", attractions: [{ name: "Fort Kochi", type: "Landmark" }, { name: "Chinese Fishing Nets", type: "Landmark" }, { name: "Mattancherry Palace", type: "Landmark" }, { name: "Kochi Temple Complex", type: "Temple" }, { name: "Kochi Local Bazaar", type: "Shopping" }, { name: "Kochi Street Food Lane", type: "Food" }, { name: "Kochi Heritage Haveli Walk", type: "Heritage" }, { name: "Kochi City Museum", type: "Museum" }, { name: "Kochi Sunset Viewpoint", type: "Viewpoint" }, { name: "Kochi Botanical Garden", type: "Nature" }] },
+  { id: "hampi", name: "Hampi", country: "India", region: "South", teaser: "Ancient ruins showcase the former Vijayanagara Empire", costIndex: 45, popularity: 3, tags: ["Heritage", "Cycling", "Photography"], image: "https://loremflickr.com/640/400/virupakshatemple,hampi", attractions: [{ name: "Virupaksha Temple", type: "Landmark" }, { name: "Vittala Temple", type: "Landmark" }, { name: "Hampi Bazaar", type: "Landmark" }, { name: "Hampi Temple Complex", type: "Temple" }, { name: "Hampi Local Bazaar", type: "Shopping" }, { name: "Hampi Street Food Lane", type: "Food" }, { name: "Hampi Heritage Haveli Walk", type: "Heritage" }, { name: "Hampi City Museum", type: "Museum" }, { name: "Hampi Sunset Viewpoint", type: "Viewpoint" }, { name: "Hampi Botanical Garden", type: "Nature" }] },
+  { id: "bangkok", name: "Bangkok", country: "Thailand", region: "Southeast Asia", teaser: "World's most visited city in 2025 by international arrivals", costIndex: 45, popularity: 5, tags: ["Food", "Temples", "Shopping"], image: "https://loremflickr.com/640/400/grandpalace,bangkok", attractions: [{ name: "Grand Palace", type: "Landmark" }, { name: "Wat Arun", type: "Landmark" }, { name: "Chatuchak Market", type: "Landmark" }, { name: "Bangkok Old Town", type: "Heritage" }, { name: "Bangkok Central Market", type: "Shopping" }, { name: "Bangkok City Museum", type: "Museum" }, { name: "Bangkok Waterfront Promenade", type: "Viewpoint" }, { name: "Bangkok Botanical Garden", type: "Nature" }, { name: "Bangkok Night Market", type: "Food" }, { name: "Bangkok Historic Square", type: "Landmark" }] },
+  { id: "london", name: "London", country: "United Kingdom", region: "Europe", teaser: "One of the world's major cultural and historical cities", costIndex: 170, popularity: 5, tags: ["Museums", "Sightseeing", "Shopping"], image: "https://loremflickr.com/640/400/bigben,london", attractions: [{ name: "Big Ben", type: "Landmark" }, { name: "Tower Bridge", type: "Landmark" }, { name: "Buckingham Palace", type: "Landmark" }, { name: "London Old Town", type: "Heritage" }, { name: "London Central Market", type: "Shopping" }, { name: "London City Museum", type: "Museum" }, { name: "London Waterfront Promenade", type: "Viewpoint" }, { name: "London Botanical Garden", type: "Nature" }, { name: "London Night Market", type: "Food" }, { name: "London Historic Square", type: "Landmark" }] },
+  { id: "paris", name: "Paris", country: "France", region: "Europe", teaser: "One of the world's biggest destinations for art, fashion and food", costIndex: 170, popularity: 5, tags: ["Museums", "Food", "Sightseeing"], image: "https://loremflickr.com/640/400/eiffeltower,paris", attractions: [{ name: "Eiffel Tower", type: "Landmark" }, { name: "Louvre", type: "Landmark" }, { name: "Notre-Dame", type: "Landmark" }, { name: "Paris Old Town", type: "Heritage" }, { name: "Paris Central Market", type: "Shopping" }, { name: "Paris City Museum", type: "Museum" }, { name: "Paris Waterfront Promenade", type: "Viewpoint" }, { name: "Paris Botanical Garden", type: "Nature" }, { name: "Paris Night Market", type: "Food" }, { name: "Paris Historic Square", type: "Landmark" }] },
+  { id: "dubai", name: "Dubai", country: "UAE", region: "Middle East", teaser: "Home to the world's tallest building", costIndex: 170, popularity: 5, tags: ["Shopping", "Sightseeing", "Desert experiences"], image: "https://loremflickr.com/640/400/burjkhalifa,dubai", attractions: [{ name: "Burj Khalifa", type: "Landmark" }, { name: "Dubai Mall", type: "Landmark" }, { name: "Palm Jumeirah", type: "Landmark" }, { name: "Dubai Old Town", type: "Heritage" }, { name: "Dubai Central Market", type: "Shopping" }, { name: "Dubai City Museum", type: "Museum" }, { name: "Dubai Waterfront Promenade", type: "Viewpoint" }, { name: "Dubai Botanical Garden", type: "Nature" }, { name: "Dubai Night Market", type: "Food" }, { name: "Dubai Historic Square", type: "Landmark" }] },
+  { id: "istanbul", name: "Istanbul", country: "Turkiye", region: "Europe/Asia", teaser: "The city physically connects Europe and Asia", costIndex: 90, popularity: 5, tags: ["Heritage", "Food", "Shopping"], image: "https://loremflickr.com/640/400/hagiasophia,istanbul", attractions: [{ name: "Hagia Sophia", type: "Landmark" }, { name: "Blue Mosque", type: "Landmark" }, { name: "Grand Bazaar", type: "Landmark" }, { name: "Istanbul Old Town", type: "Heritage" }, { name: "Istanbul Central Market", type: "Shopping" }, { name: "Istanbul City Museum", type: "Museum" }, { name: "Istanbul Waterfront Promenade", type: "Viewpoint" }, { name: "Istanbul Botanical Garden", type: "Nature" }, { name: "Istanbul Night Market", type: "Food" }, { name: "Istanbul Historic Square", type: "Landmark" }] },
+  { id: "singapore", name: "Singapore", country: "Singapore", region: "Southeast Asia", teaser: "Known for futuristic architecture and multicultural neighbourhoods", costIndex: 170, popularity: 5, tags: ["Food", "Sightseeing", "Shopping"], image: "https://loremflickr.com/640/400/marinabay,singapore", attractions: [{ name: "Marina Bay", type: "Landmark" }, { name: "Gardens by the Bay", type: "Landmark" }, { name: "Sentosa", type: "Landmark" }, { name: "Singapore Old Town", type: "Heritage" }, { name: "Singapore Central Market", type: "Shopping" }, { name: "Singapore City Museum", type: "Museum" }, { name: "Singapore Waterfront Promenade", type: "Viewpoint" }, { name: "Singapore Botanical Garden", type: "Nature" }, { name: "Singapore Night Market", type: "Food" }, { name: "Singapore Historic Square", type: "Landmark" }] },
+  { id: "tokyo", name: "Tokyo", country: "Japan", region: "East Asia", teaser: "Combines cutting-edge technology with centuries-old traditions", costIndex: 170, popularity: 5, tags: ["Food", "Shopping", "Culture"], image: "https://loremflickr.com/640/400/shibuya,tokyo", attractions: [{ name: "Shibuya", type: "Landmark" }, { name: "Senso-ji", type: "Landmark" }, { name: "Tokyo Skytree", type: "Landmark" }, { name: "Tokyo Old Town", type: "Heritage" }, { name: "Tokyo Central Market", type: "Shopping" }, { name: "Tokyo City Museum", type: "Museum" }, { name: "Tokyo Waterfront Promenade", type: "Viewpoint" }, { name: "Tokyo Botanical Garden", type: "Nature" }, { name: "Tokyo Night Market", type: "Food" }, { name: "Tokyo Historic Square", type: "Landmark" }] },
+  { id: "kyoto", name: "Kyoto", country: "Japan", region: "East Asia", teaser: "Former imperial capital famous for traditional Japanese culture", costIndex: 170, popularity: 5, tags: ["Temples", "Gardens", "Culture"], image: "https://loremflickr.com/640/400/fushimiinari,kyoto", attractions: [{ name: "Fushimi Inari", type: "Landmark" }, { name: "Kinkaku-ji", type: "Landmark" }, { name: "Arashiyama", type: "Landmark" }, { name: "Kyoto Old Town", type: "Heritage" }, { name: "Kyoto Central Market", type: "Shopping" }, { name: "Kyoto City Museum", type: "Museum" }, { name: "Kyoto Waterfront Promenade", type: "Viewpoint" }, { name: "Kyoto Botanical Garden", type: "Nature" }, { name: "Kyoto Night Market", type: "Food" }, { name: "Kyoto Historic Square", type: "Landmark" }] },
+  { id: "new-york-city", name: "New York City", country: "USA", region: "North America", teaser: "One of the world's most recognizable cities", costIndex: 170, popularity: 5, tags: ["Museums", "Food", "Shopping"], image: "https://loremflickr.com/640/400/timessquare,newyorkcity", attractions: [{ name: "Times Square", type: "Landmark" }, { name: "Central Park", type: "Landmark" }, { name: "Statue of Liberty", type: "Landmark" }, { name: "New York City Old Town", type: "Heritage" }, { name: "New York City Central Market", type: "Shopping" }, { name: "New York City City Museum", type: "Museum" }, { name: "New York City Waterfront Promenade", type: "Viewpoint" }, { name: "New York City Botanical Garden", type: "Nature" }, { name: "New York City Night Market", type: "Food" }, { name: "New York City Historic Square", type: "Landmark" }] },
+  { id: "rome", name: "Rome", country: "Italy", region: "Europe", teaser: "Ancient Roman history is visible throughout the city", costIndex: 170, popularity: 5, tags: ["Heritage", "Food", "Museums"], image: "https://loremflickr.com/640/400/colosseum,rome", attractions: [{ name: "Colosseum", type: "Landmark" }, { name: "Vatican City", type: "Landmark" }, { name: "Trevi Fountain", type: "Landmark" }, { name: "Rome Old Town", type: "Heritage" }, { name: "Rome Central Market", type: "Shopping" }, { name: "Rome City Museum", type: "Museum" }, { name: "Rome Waterfront Promenade", type: "Viewpoint" }, { name: "Rome Botanical Garden", type: "Nature" }, { name: "Rome Night Market", type: "Food" }, { name: "Rome Historic Square", type: "Landmark" }] },
+  { id: "venice", name: "Venice", country: "Italy", region: "Europe", teaser: "Built around a network of canals and islands", costIndex: 170, popularity: 3, tags: ["Gondola rides", "Heritage", "Photography"], image: "https://loremflickr.com/640/400/grandcanal,venice", attractions: [{ name: "Grand Canal", type: "Landmark" }, { name: "St. Mark's Square", type: "Landmark" }, { name: "Rialto Bridge", type: "Landmark" }, { name: "Venice Old Town", type: "Heritage" }, { name: "Venice Central Market", type: "Shopping" }, { name: "Venice City Museum", type: "Museum" }, { name: "Venice Waterfront Promenade", type: "Viewpoint" }, { name: "Venice Botanical Garden", type: "Nature" }, { name: "Venice Night Market", type: "Food" }, { name: "Venice Historic Square", type: "Landmark" }] },
+  { id: "barcelona", name: "Barcelona", country: "Spain", region: "Europe", teaser: "Famous for Antoni Gaudi's distinctive architecture", costIndex: 90, popularity: 4, tags: ["Architecture", "Beaches", "Food"], image: "https://loremflickr.com/640/400/sagradafamilia,barcelona", attractions: [{ name: "Sagrada Familia", type: "Landmark" }, { name: "Park Guell", type: "Landmark" }, { name: "Gothic Quarter", type: "Landmark" }, { name: "Barcelona Old Town", type: "Heritage" }, { name: "Barcelona Central Market", type: "Shopping" }, { name: "Barcelona City Museum", type: "Museum" }, { name: "Barcelona Waterfront Promenade", type: "Viewpoint" }, { name: "Barcelona Botanical Garden", type: "Nature" }, { name: "Barcelona Night Market", type: "Food" }, { name: "Barcelona Historic Square", type: "Landmark" }] },
+  { id: "amsterdam", name: "Amsterdam", country: "Netherlands", region: "Europe", teaser: "Famous for its historic canal network and cycling culture", costIndex: 170, popularity: 4, tags: ["Cycling", "Museums", "Canals"], image: "https://loremflickr.com/640/400/canalring,amsterdam", attractions: [{ name: "Canal Ring", type: "Landmark" }, { name: "Rijksmuseum", type: "Landmark" }, { name: "Anne Frank House", type: "Landmark" }, { name: "Amsterdam Old Town", type: "Heritage" }, { name: "Amsterdam Central Market", type: "Shopping" }, { name: "Amsterdam City Museum", type: "Museum" }, { name: "Amsterdam Waterfront Promenade", type: "Viewpoint" }, { name: "Amsterdam Botanical Garden", type: "Nature" }, { name: "Amsterdam Night Market", type: "Food" }, { name: "Amsterdam Historic Square", type: "Landmark" }] },
+  { id: "zurich", name: "Zurich", country: "Switzerland", region: "Europe", teaser: "Combines a major financial centre with lakes and Alpine scenery", costIndex: 170, popularity: 3, tags: ["Hiking", "Sightseeing", "Shopping"], image: "https://loremflickr.com/640/400/lakezurich,zurich", attractions: [{ name: "Lake Zurich", type: "Landmark" }, { name: "Old Town", type: "Landmark" }, { name: "Uetliberg", type: "Landmark" }, { name: "Zurich Old Town", type: "Heritage" }, { name: "Zurich Central Market", type: "Shopping" }, { name: "Zurich City Museum", type: "Museum" }, { name: "Zurich Waterfront Promenade", type: "Viewpoint" }, { name: "Zurich Botanical Garden", type: "Nature" }, { name: "Zurich Night Market", type: "Food" }, { name: "Zurich Historic Square", type: "Landmark" }] },
+  { id: "athens", name: "Athens", country: "Greece", region: "Europe", teaser: "Home to some of the world's most famous ancient monuments", costIndex: 90, popularity: 4, tags: ["History", "Food", "Sightseeing"], image: "https://loremflickr.com/640/400/acropolis,athens", attractions: [{ name: "Acropolis", type: "Landmark" }, { name: "Parthenon", type: "Landmark" }, { name: "Plaka", type: "Landmark" }, { name: "Athens Old Town", type: "Heritage" }, { name: "Athens Central Market", type: "Shopping" }, { name: "Athens City Museum", type: "Museum" }, { name: "Athens Waterfront Promenade", type: "Viewpoint" }, { name: "Athens Botanical Garden", type: "Nature" }, { name: "Athens Night Market", type: "Food" }, { name: "Athens Historic Square", type: "Landmark" }] },
+  { id: "cairo", name: "Cairo", country: "Egypt", region: "Africa", teaser: "Gateway to the ancient pyramids of Giza", costIndex: 45, popularity: 4, tags: ["Heritage", "Museums", "Sightseeing"], image: "https://loremflickr.com/640/400/pyramidsofgiza,cairo", attractions: [{ name: "Pyramids of Giza", type: "Landmark" }, { name: "Sphinx", type: "Landmark" }, { name: "Egyptian Museum", type: "Landmark" }, { name: "Cairo Old Town", type: "Heritage" }, { name: "Cairo Central Market", type: "Shopping" }, { name: "Cairo City Museum", type: "Museum" }, { name: "Cairo Waterfront Promenade", type: "Viewpoint" }, { name: "Cairo Botanical Garden", type: "Nature" }, { name: "Cairo Night Market", type: "Food" }, { name: "Cairo Historic Square", type: "Landmark" }] },
+  { id: "capetown", name: "Cape Town", country: "South Africa", region: "Africa", teaser: "Famous for the dramatic Table Mountain landscape", costIndex: 90, popularity: 4, tags: ["Hiking", "Beaches", "Sightseeing"], image: "https://loremflickr.com/640/400/tablemountain,capetown", attractions: [{ name: "Table Mountain", type: "Landmark" }, { name: "Robben Island", type: "Landmark" }, { name: "V&A Waterfront", type: "Landmark" }, { name: "Cape Town Old Town", type: "Heritage" }, { name: "Cape Town Central Market", type: "Shopping" }, { name: "Cape Town City Museum", type: "Museum" }, { name: "Cape Town Waterfront Promenade", type: "Viewpoint" }, { name: "Cape Town Botanical Garden", type: "Nature" }, { name: "Cape Town Night Market", type: "Food" }, { name: "Cape Town Historic Square", type: "Landmark" }] },
+  { id: "sydney", name: "Sydney", country: "Australia", region: "Oceania", teaser: "Famous for its distinctive Opera House", costIndex: 170, popularity: 5, tags: ["Beaches", "Sightseeing", "Harbour activities"], image: "https://loremflickr.com/640/400/sydneyoperahouse,sydney", attractions: [{ name: "Sydney Opera House", type: "Landmark" }, { name: "Harbour Bridge", type: "Landmark" }, { name: "Bondi Beach", type: "Landmark" }, { name: "Sydney Old Town", type: "Heritage" }, { name: "Sydney Central Market", type: "Shopping" }, { name: "Sydney City Museum", type: "Museum" }, { name: "Sydney Waterfront Promenade", type: "Viewpoint" }, { name: "Sydney Botanical Garden", type: "Nature" }, { name: "Sydney Night Market", type: "Food" }, { name: "Sydney Historic Square", type: "Landmark" }] },
+  { id: "bali", name: "Bali", country: "Indonesia", region: "Southeast Asia", teaser: "Famous for its Hindu-Balinese culture and tropical landscapes", costIndex: 45, popularity: 5, tags: ["Beaches", "Temples", "Nature"], image: "https://loremflickr.com/640/400/uluwatu,bali", attractions: [{ name: "Uluwatu", type: "Landmark" }, { name: "Ubud", type: "Landmark" }, { name: "Tegallalang", type: "Landmark" }, { name: "Bali Old Town", type: "Heritage" }, { name: "Bali Central Market", type: "Shopping" }, { name: "Bali City Museum", type: "Museum" }, { name: "Bali Waterfront Promenade", type: "Viewpoint" }, { name: "Bali Botanical Garden", type: "Nature" }, { name: "Bali Night Market", type: "Food" }, { name: "Bali Historic Square", type: "Landmark" }] },
+  { id: "seoul", name: "Seoul", country: "South Korea", region: "East Asia", teaser: "Mixes K-pop and high-tech culture with historic palaces", costIndex: 90, popularity: 4, tags: ["Food", "Shopping", "Culture"], image: "https://loremflickr.com/640/400/gyeongbokgung,seoul", attractions: [{ name: "Gyeongbokgung", type: "Landmark" }, { name: "N Seoul Tower", type: "Landmark" }, { name: "Myeongdong", type: "Landmark" }, { name: "Seoul Old Town", type: "Heritage" }, { name: "Seoul Central Market", type: "Shopping" }, { name: "Seoul City Museum", type: "Museum" }, { name: "Seoul Waterfront Promenade", type: "Viewpoint" }, { name: "Seoul Botanical Garden", type: "Nature" }, { name: "Seoul Night Market", type: "Food" }, { name: "Seoul Historic Square", type: "Landmark" }] },
+  { id: "toronto", name: "Toronto", country: "Canada", region: "North America", teaser: "Canada's largest city and a major multicultural hub", costIndex: 170, popularity: 4, tags: ["Museums", "Food", "Sightseeing"], image: "https://loremflickr.com/640/400/cntower,toronto", attractions: [{ name: "CN Tower", type: "Landmark" }, { name: "Toronto Islands", type: "Landmark" }, { name: "Royal Ontario Museum", type: "Landmark" }, { name: "Toronto Old Town", type: "Heritage" }, { name: "Toronto Central Market", type: "Shopping" }, { name: "Toronto City Museum", type: "Museum" }, { name: "Toronto Waterfront Promenade", type: "Viewpoint" }, { name: "Toronto Botanical Garden", type: "Nature" }, { name: "Toronto Night Market", type: "Food" }, { name: "Toronto Historic Square", type: "Landmark" }] },
+  { id: "rio-de-janeiro", name: "Rio de Janeiro", country: "Brazil", region: "South America", teaser: "Famous for its dramatic mountains, beaches and Carnival", costIndex: 90, popularity: 4, tags: ["Beaches", "Sightseeing", "Culture"], image: "https://loremflickr.com/640/400/christtheredeemer,riodejaneiro", attractions: [{ name: "Christ the Redeemer", type: "Landmark" }, { name: "Copacabana Beach", type: "Landmark" }, { name: "Sugarloaf Mountain", type: "Landmark" }, { name: "Rio de Janeiro Old Town", type: "Heritage" }, { name: "Rio de Janeiro Central Market", type: "Shopping" }, { name: "Rio de Janeiro City Museum", type: "Museum" }, { name: "Rio de Janeiro Waterfront Promenade", type: "Viewpoint" }, { name: "Rio de Janeiro Botanical Garden", type: "Nature" }, { name: "Rio de Janeiro Night Market", type: "Food" }, { name: "Rio de Janeiro Historic Square", type: "Landmark" }] },
+
+  { id: "reykjavik", name: "Reykjavik", country: "Iceland", region: "Europe", teaser: "Iceland's compact capital and gateway to dramatic natural wonders", costIndex: 170, popularity: 3, tags: ["Nature", "Adventure"], image: "https://loremflickr.com/640/400/hallgrimskirkja,reykjavik", attractions: [{ name: "Hallgrimskirkja", type: "Landmark" }, { name: "Old Harbour", type: "Landmark" }, { name: "Sun Voyager", type: "Landmark" }, { name: "Reykjavik Old Town", type: "Heritage" }, { name: "Reykjavik Central Market", type: "Shopping" }, { name: "Reykjavik City Museum", type: "Museum" }, { name: "Reykjavik Waterfront Promenade", type: "Viewpoint" }, { name: "Reykjavik Botanical Garden", type: "Nature" }, { name: "Reykjavik Night Market", type: "Food" }, { name: "Reykjavik Historic Square", type: "Landmark" }] },
+  { id: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe", teaser: "A hilly, tram-lined capital known for its pastel facades and coastal light", costIndex: 45, popularity: 4, tags: ["Food", "Culture", "Relaxing"], image: "https://loremflickr.com/640/400/belemtower,lisbon", attractions: [{ name: "Belem Tower", type: "Landmark" }, { name: "Alfama District", type: "Landmark" }, { name: "Sao Jorge Castle", type: "Landmark" }, { name: "Lisbon Old Town", type: "Heritage" }, { name: "Lisbon Central Market", type: "Shopping" }, { name: "Lisbon City Museum", type: "Museum" }, { name: "Lisbon Waterfront Promenade", type: "Viewpoint" }, { name: "Lisbon Botanical Garden", type: "Nature" }, { name: "Lisbon Night Market", type: "Food" }, { name: "Lisbon Historic Square", type: "Landmark" }] },
+  { id: "kerala", name: "Kerala Backwaters", country: "India", region: "South", teaser: "A network of tranquil lagoons, lakes and canals along the Arabian Sea coast", costIndex: 45, popularity: 5, tags: ["Relaxing", "Nature"], image: "https://loremflickr.com/640/400/alleppeybackwaters,keralabackwaters", attractions: [{ name: "Alleppey Backwaters", type: "Landmark" }, { name: "Munnar Tea Gardens", type: "Landmark" }, { name: "Fort Kochi (nearby)", type: "Landmark" }, { name: "Kerala Backwaters Temple Complex", type: "Temple" }, { name: "Kerala Backwaters Local Bazaar", type: "Shopping" }, { name: "Kerala Backwaters Street Food Lane", type: "Food" }, { name: "Kerala Backwaters Heritage Haveli Walk", type: "Heritage" }, { name: "Kerala Backwaters City Museum", type: "Museum" }, { name: "Kerala Backwaters Sunset Viewpoint", type: "Viewpoint" }, { name: "Kerala Backwaters Botanical Garden", type: "Nature" }] },
+  { id: "shimla", name: "Shimla", country: "India", region: "North", teaser: "A former colonial hill station framed by pine forests and mountain views", costIndex: 45, popularity: 3, tags: ["Nature", "Relaxing"], image: "https://loremflickr.com/640/400/theridge,shimla", attractions: [{ name: "The Ridge", type: "Landmark" }, { name: "Mall Road", type: "Landmark" }, { name: "Jakhoo Temple", type: "Landmark" }, { name: "Shimla Temple Complex", type: "Temple" }, { name: "Shimla Local Bazaar", type: "Shopping" }, { name: "Shimla Street Food Lane", type: "Food" }, { name: "Shimla Heritage Haveli Walk", type: "Heritage" }, { name: "Shimla City Museum", type: "Museum" }, { name: "Shimla Sunset Viewpoint", type: "Viewpoint" }, { name: "Shimla Botanical Garden", type: "Nature" }] },
+  { id: "mysore", name: "Mysore", country: "India", region: "South", teaser: "Known for its opulent palace and traditional silk and sandalwood crafts", costIndex: 25, popularity: 3, tags: ["Culture"], image: "https://loremflickr.com/640/400/mysorepalace,mysore", attractions: [{ name: "Mysore Palace", type: "Landmark" }, { name: "Chamundi Hills", type: "Landmark" }, { name: "Devaraja Market", type: "Landmark" }, { name: "Mysore Temple Complex", type: "Temple" }, { name: "Mysore Local Bazaar", type: "Shopping" }, { name: "Mysore Street Food Lane", type: "Food" }, { name: "Mysore Heritage Haveli Walk", type: "Heritage" }, { name: "Mysore City Museum", type: "Museum" }, { name: "Mysore Sunset Viewpoint", type: "Viewpoint" }, { name: "Mysore Botanical Garden", type: "Nature" }] },
+  { id: "ooty", name: "Ooty", country: "India", region: "South", teaser: "A cool-climate hill station famous for tea plantations and toy trains", costIndex: 25, popularity: 3, tags: ["Nature", "Relaxing"], image: "https://loremflickr.com/640/400/nilgirimountainrailway,ooty", attractions: [{ name: "Nilgiri Mountain Railway", type: "Landmark" }, { name: "Botanical Garden", type: "Landmark" }, { name: "Ooty Lake", type: "Landmark" }, { name: "Ooty Temple Complex", type: "Temple" }, { name: "Ooty Local Bazaar", type: "Shopping" }, { name: "Ooty Street Food Lane", type: "Food" }, { name: "Ooty Heritage Haveli Walk", type: "Heritage" }, { name: "Ooty City Museum", type: "Museum" }, { name: "Ooty Sunset Viewpoint", type: "Viewpoint" }, { name: "Ooty Botanical Garden", type: "Nature" }] },
+  { id: "andaman", name: "Andaman & Nicobar Islands", country: "India", region: "India", teaser: "A remote island chain with coral reefs and untouched white-sand beaches", costIndex: 45, popularity: 4, tags: ["Relaxing", "Nature", "Adventure"], image: "https://loremflickr.com/640/400/radhanagarbeach,andamannicobarislands", attractions: [{ name: "Radhanagar Beach", type: "Landmark" }, { name: "Havelock Island", type: "Landmark" }, { name: "Cellular Jail", type: "Landmark" }, { name: "Andaman & Nicobar Islands Temple Complex", type: "Temple" }, { name: "Andaman & Nicobar Islands Local Bazaar", type: "Shopping" }, { name: "Andaman & Nicobar Islands Street Food Lane", type: "Food" }, { name: "Andaman & Nicobar Islands Heritage Haveli Walk", type: "Heritage" }, { name: "Andaman & Nicobar Islands City Museum", type: "Museum" }, { name: "Andaman & Nicobar Islands Sunset Viewpoint", type: "Viewpoint" }, { name: "Andaman & Nicobar Islands Botanical Garden", type: "Nature" }] },
+];
+
+const ACTIVITIES = [
+  { id: "a1", cityId: "paris", name: "Louvre guided tour", type: "Culture", cost: 65, duration: 3, time: "09:00" },
+  { id: "a2", cityId: "paris", name: "Seine river dinner cruise", type: "Food", cost: 90, duration: 2, time: "19:00" },
+  { id: "a3", cityId: "paris", name: "Le Marais nightlife walk", type: "Nightlife", cost: 40, duration: 3, time: "21:00" },
+  { id: "a4", cityId: "bali", name: "Ubud rice terrace hike", type: "Nature", cost: 25, duration: 4, time: "07:00" },
+  { id: "a5", cityId: "bali", name: "Beachfront spa day", type: "Relaxing", cost: 55, duration: 3, time: "13:00" },
+  { id: "a6", cityId: "bali", name: "Mount Batur sunrise trek", type: "Adventure", cost: 45, duration: 5, time: "03:30" },
+  { id: "a7", cityId: "tokyo", name: "Tsukiji street food crawl", type: "Food", cost: 50, duration: 3, time: "10:00" },
+  { id: "a8", cityId: "tokyo", name: "Senso-ji temple visit", type: "Culture", cost: 0, duration: 2, time: "09:00" },
+  { id: "a9", cityId: "tokyo", name: "Shibuya izakaya night", type: "Nightlife", cost: 60, duration: 3, time: "20:00" },
+  { id: "a10", cityId: "rome", name: "Colosseum underground tour", type: "Culture", cost: 70, duration: 3, time: "09:30" },
+  { id: "a11", cityId: "rome", name: "Trastevere pasta class", type: "Food", cost: 80, duration: 3, time: "17:00" },
+  { id: "a12", cityId: "bangkok", name: "Grand Palace tour", type: "Culture", cost: 30, duration: 3, time: "09:00" },
+  { id: "a13", cityId: "bangkok", name: "Khao San Road night market", type: "Nightlife", cost: 20, duration: 3, time: "19:00" },
+  { id: "a14", cityId: "barcelona", name: "Sagrada Familia tour", type: "Culture", cost: 45, duration: 2, time: "10:00" },
+  { id: "a15", cityId: "barcelona", name: "Tapas and flamenco night", type: "Nightlife", cost: 65, duration: 3, time: "20:30" },
+  { id: "a16", cityId: "capetown", name: "Table Mountain hike", type: "Adventure", cost: 20, duration: 5, time: "07:00" },
+  { id: "a17", cityId: "capetown", name: "Cape Peninsula safari drive", type: "Nature", cost: 95, duration: 6, time: "08:00" },
+  { id: "a18", cityId: "sydney", name: "Bondi to Coogee coastal walk", type: "Nature", cost: 0, duration: 3, time: "08:00" },
+  { id: "a19", cityId: "sydney", name: "Blue Mountains adventure day", type: "Adventure", cost: 110, duration: 7, time: "07:00" },
+  { id: "a20", cityId: "reykjavik", name: "Golden Circle tour", type: "Nature", cost: 100, duration: 8, time: "08:00" },
+  { id: "a21", cityId: "reykjavik", name: "Glacier hiking excursion", type: "Adventure", cost: 140, duration: 6, time: "08:30" },
+  { id: "a22", cityId: "lisbon", name: "Alfama food and wine walk", type: "Food", cost: 55, duration: 3, time: "18:00" },
+  { id: "a23", cityId: "lisbon", name: "Belem historic district tour", type: "Culture", cost: 20, duration: 3, time: "10:00" },
+  { id: "a24", cityId: "lisbon", name: "Sintra day trip", type: "Relaxing", cost: 60, duration: 6, time: "09:00" },
+  { id: "a25", cityId: "agra", name: "Taj Mahal sunrise tour", type: "Culture", cost: 15, duration: 3, time: "05:30" },
+  { id: "a26", cityId: "agra", name: "Agra Fort heritage walk", type: "Culture", cost: 10, duration: 2, time: "10:00" },
+  { id: "a27", cityId: "jaipur", name: "Amber Fort elephant and jeep tour", type: "Culture", cost: 20, duration: 3, time: "09:00" },
+  { id: "a28", cityId: "jaipur", name: "Chokhi Dhani Rajasthani thali dinner", type: "Food", cost: 18, duration: 2, time: "19:00" },
+  { id: "a29", cityId: "goa", name: "Baga Beach parasailing", type: "Adventure", cost: 25, duration: 2, time: "11:00" },
+  { id: "a30", cityId: "goa", name: "Anjuna flea market and sunset", type: "Relaxing", cost: 5, duration: 3, time: "16:00" },
+  { id: "a31", cityId: "goa", name: "Tito's Lane nightlife crawl", type: "Nightlife", cost: 30, duration: 3, time: "22:00" },
+  { id: "a32", cityId: "kerala", name: "Alleppey houseboat backwaters cruise", type: "Relaxing", cost: 45, duration: 6, time: "10:00" },
+  { id: "a33", cityId: "kerala", name: "Munnar tea garden trek", type: "Nature", cost: 20, duration: 4, time: "07:00" },
+  { id: "a34", cityId: "varanasi", name: "Ganga aarti evening ceremony", type: "Culture", cost: 5, duration: 2, time: "18:00" },
+  { id: "a35", cityId: "varanasi", name: "Sunrise boat ride on the Ganges", type: "Relaxing", cost: 10, duration: 2, time: "05:30" },
+  { id: "a36", cityId: "delhi", name: "Old Delhi food and heritage walk", type: "Food", cost: 20, duration: 3, time: "10:00" },
+  { id: "a37", cityId: "delhi", name: "Humayun's Tomb and Qutub Minar tour", type: "Culture", cost: 15, duration: 4, time: "09:00" },
+  { id: "a38", cityId: "delhi", name: "Hauz Khas Village nightlife", type: "Nightlife", cost: 25, duration: 3, time: "21:00" },
+  { id: "a39", cityId: "mumbai", name: "Marine Drive and Colaba heritage walk", type: "Culture", cost: 10, duration: 3, time: "16:00" },
+  { id: "a40", cityId: "mumbai", name: "Bollywood studio tour", type: "Culture", cost: 40, duration: 3, time: "10:00" },
+  { id: "a41", cityId: "mumbai", name: "Bandra nightlife and rooftop bars", type: "Nightlife", cost: 35, duration: 3, time: "21:30" },
+  { id: "a42", cityId: "udaipur", name: "City Palace and Lake Pichola boat ride", type: "Culture", cost: 20, duration: 3, time: "10:00" },
+  { id: "a43", cityId: "udaipur", name: "Sunset dinner cruise", type: "Relaxing", cost: 30, duration: 2, time: "18:30" },
+  { id: "a44", cityId: "manali", name: "Solang Valley paragliding", type: "Adventure", cost: 35, duration: 2, time: "10:00" },
+  { id: "a45", cityId: "manali", name: "Rohtang Pass day trip", type: "Nature", cost: 30, duration: 8, time: "07:00" },
+  { id: "a46", cityId: "rishikesh", name: "Ganga white water rafting", type: "Adventure", cost: 25, duration: 3, time: "09:00" },
+  { id: "a47", cityId: "rishikesh", name: "Sunset yoga and meditation session", type: "Relaxing", cost: 10, duration: 2, time: "17:00" },
+  { id: "a48", cityId: "shimla", name: "Mall Road and Ridge heritage walk", type: "Culture", cost: 0, duration: 2, time: "16:00" },
+  { id: "a49", cityId: "shimla", name: "Kufri snow adventure", type: "Adventure", cost: 25, duration: 4, time: "09:00" },
+  { id: "a50", cityId: "amritsar", name: "Golden Temple visit and langar", type: "Culture", cost: 0, duration: 3, time: "07:00" },
+  { id: "a51", cityId: "amritsar", name: "Wagah Border retreat ceremony", type: "Culture", cost: 5, duration: 2, time: "17:30" },
+  { id: "a52", cityId: "jaisalmer", name: "Thar Desert camel safari and camp", type: "Adventure", cost: 40, duration: 6, time: "15:00" },
+  { id: "a53", cityId: "jaisalmer", name: "Jaisalmer Fort heritage walk", type: "Culture", cost: 10, duration: 2, time: "10:00" },
+  { id: "a54", cityId: "mysore", name: "Mysore Palace illumination tour", type: "Culture", cost: 10, duration: 2, time: "18:00" },
+  { id: "a55", cityId: "mysore", name: "Chamundi Hills trek", type: "Culture", cost: 5, duration: 3, time: "07:00" },
+  { id: "a56", cityId: "darjeeling", name: "Toy train heritage ride", type: "Culture", cost: 15, duration: 2, time: "09:00" },
+  { id: "a57", cityId: "darjeeling", name: "Tiger Hill sunrise viewpoint", type: "Nature", cost: 10, duration: 3, time: "04:30" },
+  { id: "a58", cityId: "ooty", name: "Nilgiri toy train ride", type: "Nature", cost: 10, duration: 3, time: "09:30" },
+  { id: "a59", cityId: "ooty", name: "Botanical Garden and lake boating", type: "Relaxing", cost: 8, duration: 2, time: "14:00" },
+  { id: "a60", cityId: "hyderabad", name: "Charminar and old city food walk", type: "Food", cost: 15, duration: 3, time: "17:00" },
+  { id: "a61", cityId: "hyderabad", name: "Golconda Fort sound and light show", type: "Culture", cost: 8, duration: 2, time: "19:00" },
+  { id: "a62", cityId: "kashmir", name: "Dal Lake shikara ride", type: "Relaxing", cost: 15, duration: 2, time: "16:00" },
+  { id: "a63", cityId: "kashmir", name: "Gulmarg gondola and snow trek", type: "Adventure", cost: 40, duration: 5, time: "08:00" },
+  { id: "a64", cityId: "andaman", name: "Havelock Island scuba diving", type: "Adventure", cost: 60, duration: 3, time: "09:00" },
+  { id: "a65", cityId: "andaman", name: "Radhanagar Beach sunset", type: "Relaxing", cost: 0, duration: 2, time: "17:00" },
+  { id: "a66", cityId: "andaman", name: "Cellular Jail light and sound show", type: "Culture", cost: 5, duration: 2, time: "18:30" },
+];
+
+/* Convert the mock USD-scale costs above into rupees, so every price in
+   the app — city cost index and activity cost — is denominated in INR. */
+const INR_RATE = 80;
+CITIES.forEach((c) => { c.costIndex = Math.round(c.costIndex * INR_RATE); });
+ACTIVITIES.forEach((a) => { a.cost = Math.round(a.cost * INR_RATE); });
+
+const cityById = (id) => CITIES.find((c) => c.id === id);
+const activityById = (id) => ACTIVITIES.find((a) => a.id === id);
+
+/* Resolves an itinerary entry against either the curated ACTIVITIES catalog
+   or a trip's own custom stops (attractions added straight from a city's
+   "places to visit" list). */
+const resolveActivity = (trip, id) =>
+  activityById(id) || (trip.customActivities || []).find((a) => a.id === id);
+
+/* Nature hero image shown at the very start of the app (auth screen). */
+const HERO_IMAGE = "https://loremflickr.com/1200/700/mountains,sunrise,nature,travel";
+
+/* Icons/colors for each "place to visit" category within a city. */
+const ATTRACTION_TYPES = {
+  Landmark: { icon: "🏛️", color: "#7A5C8E" },
+  Temple: { icon: "🛕", color: "#C1502E" },
+  Shopping: { icon: "🛍️", color: "#D9A441" },
+  Food: { icon: "🍜", color: "#A63D5B" },
+  Heritage: { icon: "🏯", color: "#8A5E0C" },
+  Museum: { icon: "🖼️", color: "#3E7C8A" },
+  Viewpoint: { icon: "🌄", color: "#2F5233" },
+  Nature: { icon: "🌿", color: "#2F5233" },
+};
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const encodePass = (p) => btoa(unescape(encodeURIComponent("gt::" + p)));
+const daysBetween = (start, end) => {
+  if (!start || !end) return 0;
+  const d1 = new Date(start), d2 = new Date(end);
+  const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+  return diff > 0 ? diff : 0;
+};
+const money = (n) => "\u20B9" + Math.round(n).toLocaleString("en-IN");
+const timeToMin = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+const minToTime = (mins) => {
+  mins = ((mins % 1440) + 1440) % 1440;
+  const h = Math.floor(mins / 60).toString().padStart(2, "0");
+  const m = (mins % 60).toString().padStart(2, "0");
+  return `${h}:${m}`;
+};
+
+function estimateCost(trip) {
+  const nights = Math.max(daysBetween(trip.startDate, trip.endDate) - 1, 0) || daysBetween(trip.startDate, trip.endDate);
+  const cityBase = trip.destinations.reduce((sum, d) => {
+    const c = cityById(d.cityId);
+    return sum + (c ? c.costIndex * Math.max(d.days, 1) : 0);
+  }, 0);
+  const activityCost = trip.activities.reduce((sum, a) => sum + (resolveActivity(trip, a.activityId)?.cost || 0), 0);
+  const buffer = (cityBase + activityCost) * 0.15;
+  return Math.round(cityBase + activityCost + buffer);
+}
+
+function affordability(trip) {
+  const est = estimateCost(trip);
+  const budget = Number(trip.maxBudget) || 0;
+  if (!budget) return { status: "unknown", est, budget, diff: 0 };
+  const ratio = est / budget;
+  let status = "within";
+  if (ratio > 1.05) status = "over";
+  else if (ratio > 0.9) status = "close";
+  return { status, est, budget, diff: est - budget };
+}
+
+function cheaperSuggestions(trip) {
+  const suggestions = [];
+  const selectedIds = trip.destinations.map((d) => d.cityId);
+  const selectedVibes = trip.vibes.length ? trip.vibes : VIBES.map((v) => v.name);
+  if (trip.destinations.length) {
+    const priciest = [...trip.destinations].sort(
+      (a, b) => (cityById(b.cityId)?.costIndex || 0) - (cityById(a.cityId)?.costIndex || 0)
+    )[0];
+    const priciestCity = cityById(priciest.cityId);
+    const alt = CITIES.filter(
+      (c) => !selectedIds.includes(c.id) && c.costIndex < (priciestCity?.costIndex || 0) &&
+        c.tags.some((t) => selectedVibes.includes(t))
+    ).sort((a, b) => a.costIndex - b.costIndex)[0];
+    if (alt && priciestCity) {
+      suggestions.push(
+        `Swap ${priciestCity.name} for ${alt.name}, ${alt.country} — similar vibe, about ${money((priciestCity.costIndex - alt.costIndex) * priciest.days)} cheaper over ${priciest.days} day(s).`
+      );
+    }
+  }
+  if (trip.activities.length) {
+    const priciestAct = [...trip.activities].sort(
+      (a, b) => (resolveActivity(trip, b.activityId)?.cost || 0) - (resolveActivity(trip, a.activityId)?.cost || 0)
+    )[0];
+    const act = resolveActivity(trip, priciestAct?.activityId);
+    if (act && act.cost > 0) {
+      suggestions.push(`Drop "${act.name}" to save ${money(act.cost)}, or look for a free alternative on that day.`);
+    }
+  }
+  suggestions.push("Trim a day off your longest stop to reduce lodging and meal costs.");
+  return suggestions.slice(0, 3);
+}
+
+function matchedActivities(trip) {
+  const cityIds = trip.destinations.map((d) => d.cityId);
+  if (!cityIds.length) return [];
+  const remainingBudget = Math.max((Number(trip.maxBudget) || 0) - estimateCost(trip), 0);
+  const perActivityCap = remainingBudget > 0 ? Math.max(remainingBudget * 0.4, 40) : 200;
+  const chosenIds = trip.activities.map((a) => a.activityId);
+  return ACTIVITIES.filter((a) => cityIds.includes(a.cityId) && !chosenIds.includes(a.id))
+    .filter((a) => (trip.vibes.length ? trip.vibes.includes(a.type) : true))
+    .sort((a, b) => {
+      const aFit = a.cost <= perActivityCap ? 0 : 1;
+      const bFit = b.cost <= perActivityCap ? 0 : 1;
+      if (aFit !== bFit) return aFit - bFit;
+      return a.cost - b.cost;
+    })
+    .slice(0, 8);
+}
+
+function findIssues(trip) {
+  const issues = [];
+  const byDay = {};
+  trip.activities.forEach((a) => {
+    byDay[a.day] = byDay[a.day] || [];
+    byDay[a.day].push(a);
+  });
+  Object.entries(byDay).forEach(([day, list]) => {
+    const withMeta = list
+      .map((a) => ({ ...a, meta: resolveActivity(trip, a.activityId) }))
+      .filter((a) => a.meta)
+      .sort((a, b) => timeToMin(a.time) - timeToMin(b.time));
+    for (let i = 0; i < withMeta.length - 1; i++) {
+      const cur = withMeta[i];
+      const next = withMeta[i + 1];
+      const curEnd = timeToMin(cur.time) + cur.meta.duration * 60;
+      if (curEnd > timeToMin(next.time)) {
+        issues.push({
+          id: `overlap-${cur.id}-${next.id}`,
+          type: "overlap",
+          message: `Day ${day}: "${cur.meta.name}" runs until ${minToTime(curEnd)}, overlapping "${next.meta.name}" at ${next.time}.`,
+          fix: (t) => {
+            const updated = t.activities.map((a) =>
+              a.id === next.id ? { ...a, time: minToTime(curEnd + 15) } : a
+            );
+            return { ...t, activities: updated };
+          },
+        });
+      }
+    }
+  });
+  const afford = affordability(trip);
+  if (afford.status === "over" && trip.activities.length) {
+    const priciest = [...trip.activities].sort(
+      (a, b) => (resolveActivity(trip, b.activityId)?.cost || 0) - (resolveActivity(trip, a.activityId)?.cost || 0)
+    )[0];
+    const meta = resolveActivity(trip, priciest.activityId);
+    if (meta) {
+      issues.push({
+        id: `budget-${priciest.id}`,
+        type: "budget",
+        message: `Trip is ${money(afford.diff)} over budget. Removing "${meta.name}" (${money(meta.cost)}) would help.`,
+        fix: (t) => ({ ...t, activities: t.activities.filter((a) => a.id !== priciest.id) }),
+      });
+    }
+  }
+  return issues;
+}
+
+/* ------------------------------------------------------------------ */
+/* Storage layer (acts as the "database")                              */
+/* ------------------------------------------------------------------ */
+
+/* In-memory fallback so the app never gets stuck if persistent storage is
+   unavailable or a call errors out — it degrades to "works for this
+   session only" instead of blocking navigation. */
+const memoryStore = new Map();
+const hasStorage = () => typeof window !== "undefined" && !!window.storage;
+
+async function storageGet(key) {
+  if (hasStorage()) {
+    try {
+      const r = await window.storage.get(key, false);
+      return r ? r.value : null;
+    } catch (e) {
+      console.warn("storage.get failed, using memory fallback", key, e);
+    }
+  }
+  return memoryStore.has(key) ? memoryStore.get(key) : null;
+}
+async function storageSet(key, value) {
+  memoryStore.set(key, value);
+  if (hasStorage()) {
+    try {
+      await window.storage.set(key, value, false);
+    } catch (e) {
+      console.warn("storage.set failed, kept in memory only", key, e);
+    }
+  }
+}
+async function storageDelete(key) {
+  memoryStore.delete(key);
+  if (hasStorage()) {
+    try {
+      await window.storage.delete(key, false);
+    } catch (e) {
+      console.warn("storage.delete failed", key, e);
+    }
+  }
+}
+
+async function getUser(email) {
+  const v = await storageGet(`gt_user:${email}`);
+  return v ? JSON.parse(v) : null;
+}
+async function saveUser(user) {
+  await storageSet(`gt_user:${user.email}`, JSON.stringify(user));
+}
+async function getTrips(email) {
+  const v = await storageGet(`gt_trips:${email}`);
+  return v ? JSON.parse(v) : [];
+}
+async function saveTrips(email, trips) {
+  await storageSet(`gt_trips:${email}`, JSON.stringify(trips));
+}
+async function getSession() {
+  const v = await storageGet("gt_session");
+  return v ? JSON.parse(v) : null;
+}
+async function setSession(email) {
+  await storageSet("gt_session", JSON.stringify({ email }));
+}
+async function clearSession() {
+  await storageDelete("gt_session");
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared UI bits                                                      */
+/* ------------------------------------------------------------------ */
+
+function Field({ label, error, children }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label style={{ display: "block", fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.65, marginBottom: 6, fontFamily: "'IBM Plex Sans',sans-serif", fontWeight: 600 }}>
+        {label}
+      </label>
+      {children}
+      {error && <div style={{ color: "var(--rust)", fontSize: 12.5, marginTop: 5 }}>{error}</div>}
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%",
+  padding: "11px 13px",
+  borderRadius: 8,
+  border: "1.5px solid #D8CDB2",
+  background: "#FFFDF8",
+  fontSize: 15,
+  fontFamily: "'IBM Plex Sans',sans-serif",
+  color: "var(--ink)",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+function Logo({ dark }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gold)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Plane size={17} color="var(--navy)" style={{ transform: "rotate(-45deg)" }} />
+      </div>
+      <span style={{ fontFamily: "'Fraunces',serif", fontStyle: "italic", fontWeight: 700, fontSize: 22, color: dark ? "#F5F1E8" : "var(--navy)" }}>
+        GlobeTrotter
+      </span>
+    </div>
+  );
+}
+
+function DottedRoute() {
+  return (
+    <svg width="100%" height="26" viewBox="0 0 400 26" style={{ display: "block" }}>
+      <line x1="10" y1="13" x2="390" y2="13" stroke="var(--gold)" strokeWidth="2" strokeDasharray="1 9" strokeLinecap="round" />
+      <circle cx="10" cy="13" r="4" fill="var(--rust)" />
+      <g transform="translate(196,4)">
+        <Plane size={18} color="var(--navy)" style={{ transform: "translate(0,0)" }} />
+      </g>
+      <circle cx="390" cy="13" r="4" fill="var(--pine)" />
+    </svg>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    within: { bg: "#E1EDDD", fg: "var(--pine)", label: "Within budget" },
+    close: { bg: "#FBEBCD", fg: "#8A5E0C", label: "Cutting it close" },
+    over: { bg: "#F6DAD2", fg: "var(--rust)", label: "Over budget" },
+    unknown: { bg: "#EAE6D8", fg: "#66604C", label: "Set a budget" },
+  };
+  const s = map[status] || map.unknown;
+  return (
+    <span style={{ background: s.bg, color: s.fg, padding: "4px 12px", borderRadius: 20, fontSize: 12.5, fontWeight: 600, fontFamily: "'IBM Plex Sans',sans-serif" }}>
+      {s.label}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Login / Signup                                                      */
+/* ------------------------------------------------------------------ */
+
+function AuthScreen({ mode, setMode, onAuthed }) {
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [banner, setBanner] = useState("");
+
+  const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const validate = () => {
+    const e = {};
+    if (mode === "signup" && form.name.trim().length < 2) e.name = "Enter your full name.";
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Enter a valid email address.";
+    if (form.password.length < 6) e.password = "Password must be at least 6 characters.";
+    if (mode === "signup" && form.password !== form.confirm) e.confirm = "Passwords don't match.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const submit = async (ev) => {
+    if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+    setBanner("");
+    if (!validate()) {
+      setBanner("Please fix the highlighted fields below before continuing.");
+      return;
+    }
+    setBusy(true);
+    const email = form.email.trim().toLowerCase();
+    if (mode === "signup") {
+      let existing = null;
+      try {
+        existing = await getUser(email);
+      } catch (e) {
+        console.warn("Lookup failed, proceeding as new account", e);
+      }
+      if (existing) {
+        setErrors({ email: "An account with this email already exists." });
+        setBusy(false);
+        return;
+      }
+      const user = { email, name: form.name.trim(), password: encodePass(form.password), createdAt: Date.now() };
+      try {
+        await saveUser(user);
+        await setSession(email);
+      } catch (e) {
+        console.warn("Persisting account failed, continuing with this session only", e);
+      }
+      onAuthed(user);
+    } else {
+      let user = null;
+      try {
+        user = await getUser(email);
+      } catch (e) {
+        console.warn("Lookup failed during login", e);
+      }
+      if (!user || user.password !== encodePass(form.password)) {
+        setBanner("Email or password is incorrect.");
+        setBusy(false);
+        return;
+      }
+      try {
+        await setSession(email);
+      } catch (e) {
+        console.warn("Saving session failed, continuing with this session only", e);
+      }
+      onAuthed(user);
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="gt-app" style={{ minHeight: 560, display: "flex", background: "var(--paper)", borderRadius: 14, overflow: "hidden", border: "1px solid #E4DAC0" }}>
+      <div
+        style={{
+          flex: "0 0 42%",
+          position: "relative",
+          padding: "40px 34px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          minWidth: 220,
+          backgroundImage: `linear-gradient(180deg, rgba(14,42,61,0.55), rgba(10,25,36,0.88)), url(${HERO_IMAGE})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+        className="gt-hide-sm"
+      >
+        <Logo dark />
+        <div>
+          <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 30, color: "#F5F1E8", lineHeight: 1.2, marginBottom: 14 }}>
+            Plan trips like<br />a seasoned traveler.
+          </div>
+          <p style={{ color: "#CBD4D8", fontSize: 14.5, lineHeight: 1.6, maxWidth: 300 }}>
+            Build multi-city itineraries, keep every stop on budget, and see your whole journey at a glance.
+          </p>
+        </div>
+        <div>
+          <DottedRoute />
+          <p style={{ color: "#8FA3AC", fontSize: 12, marginTop: 8 }}>Delhi &rarr; Jaipur &rarr; Goa &mdash; sample route</p>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, padding: "40px 44px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ maxWidth: 360, width: "100%", margin: "0 auto" }}>
+          <div className="gt-hide-lg" style={{ marginBottom: 24 }}>
+            <Logo />
+          </div>
+          <h1 style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 26, color: "var(--ink)", marginBottom: 4 }}>
+            {mode === "login" ? "Welcome back" : "Create your account"}
+          </h1>
+          <p style={{ color: "#7A7360", fontSize: 14, marginBottom: 26 }}>
+            {mode === "login" ? "Log in to keep planning your trips." : "Start mapping your next adventure."}
+          </p>
+
+          {banner && (
+            <div style={{ background: "#F6DAD2", color: "var(--rust)", padding: "10px 12px", borderRadius: 8, fontSize: 13.5, marginBottom: 16 }}>
+              {banner}
+            </div>
+          )}
+
+          <form onSubmit={submit} noValidate>
+            {mode === "signup" && (
+              <Field label="Full name" error={errors.name}>
+                <input style={inputStyle} value={form.name} onChange={update("name")} placeholder="Alex Rivera" autoComplete="name" />
+              </Field>
+            )}
+            <Field label="Email" error={errors.email}>
+              <input style={inputStyle} type="email" value={form.email} onChange={update("email")} placeholder="you@example.com" autoComplete="email" />
+            </Field>
+            <Field label="Password" error={errors.password}>
+              <input style={inputStyle} type="password" value={form.password} onChange={update("password")} placeholder="At least 6 characters" autoComplete={mode === "login" ? "current-password" : "new-password"} />
+            </Field>
+            {mode === "signup" && (
+              <Field label="Confirm password" error={errors.confirm}>
+                <input style={inputStyle} type="password" value={form.confirm} onChange={update("confirm")} placeholder="Repeat password" />
+              </Field>
+            )}
+
+            {mode === "login" && (
+              <div style={{ textAlign: "right", marginBottom: 18 }}>
+                <button type="button" onClick={() => setBanner("Password reset isn't wired up yet in this preview — try logging in with the account you signed up with.")}
+                  style={{ background: "none", border: "none", color: "#8A6A2B", fontSize: 13, cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
+            <button type="button" disabled={busy} onClick={submit} style={{
+              width: "100%", padding: "12px 0", borderRadius: 8, border: "none",
+              background: "var(--gold)", color: "var(--navy)", fontWeight: 700, fontSize: 15,
+              cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1, fontFamily: "'IBM Plex Sans',sans-serif"
+            }}>
+              {busy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
+            </button>
+          </form>
+
+          <p style={{ textAlign: "center", marginTop: 20, fontSize: 13.5, color: "#7A7360" }}>
+            {mode === "login" ? (
+              <>Don't have an account?{" "}
+                <button onClick={() => { setMode("signup"); setErrors({}); setBanner(""); }} style={{ background: "none", border: "none", color: "var(--rust)", fontWeight: 700, cursor: "pointer", padding: 0 }}>Sign up</button>
+              </>
+            ) : (
+              <>Already have an account?{" "}
+                <button onClick={() => { setMode("login"); setErrors({}); setBanner(""); }} style={{ background: "none", border: "none", color: "var(--rust)", fontWeight: 700, cursor: "pointer", padding: 0 }}>Log in</button>
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Dashboard                                                           */
+/* ------------------------------------------------------------------ */
+
+function TripCard({ trip, onOpen }) {
+  const afford = affordability(trip);
+  const nights = daysBetween(trip.startDate, trip.endDate);
+  const destNames = trip.destinations.map((d) => cityById(d.cityId)?.name).filter(Boolean).join(" · ");
+  const coverCity = trip.destinations.map((d) => cityById(d.cityId)).filter(Boolean)[0];
+  const cover = trip.coverPhoto || coverCity?.image;
+  return (
+    <button
+      onClick={() => onOpen && onOpen(trip)}
+      style={{ background: "#FFFDF8", border: "1px solid #E4DAC0", borderRadius: 12, padding: 0, minWidth: 240, flex: "0 0 auto", cursor: onOpen ? "pointer" : "default", textAlign: "left", overflow: "hidden", font: "inherit" }}
+    >
+      {cover && (
+        <div style={{ width: "100%", height: 92, background: `url(${cover}) center/cover` }} />
+      )}
+      <div style={{ padding: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 17, color: "var(--ink)" }}>{trip.name}</div>
+          <StatusBadge status={afford.status} />
+        </div>
+        <div style={{ color: "#8A8368", fontSize: 12.5, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+          <MapPin size={12} /> {destNames || "No stops yet"}
+        </div>
+        <div style={{ color: "#8A8368", fontSize: 12.5, marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+          <Calendar size={12} /> {trip.startDate || "TBD"} → {trip.endDate || "TBD"} ({nights || 0}d)
+        </div>
+        <div style={{ marginTop: 10, fontFamily: "'IBM Plex Mono',monospace", fontSize: 14, color: "var(--navy)" }}>
+          {money(afford.est)} <span style={{ color: "#A69E82", fontSize: 12 }}>est. / {trip.maxBudget ? money(trip.maxBudget) : "no budget set"}</span>
+        </div>
+        {onOpen && (
+          <div style={{ marginTop: 8, fontSize: 11.5, color: "var(--rust)", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+            View trip calendar <ArrowRight size={12} />
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function Dashboard({ user, trips, onPlanNew, onLogout, onOpenTrip }) {
+  const totalBudgeted = trips.reduce((s, t) => s + (Number(t.maxBudget) || 0), 0);
+  const totalEstimated = trips.reduce((s, t) => s + estimateCost(t), 0);
+  const overCount = trips.filter((t) => affordability(t).status === "over").length;
+
+  const visitedCityIds = new Set(trips.flatMap((t) => t.destinations.map((d) => d.cityId)));
+  const recommended = [...CITIES]
+    .filter((c) => !visitedCityIds.has(c.id))
+    .sort((a, b) => b.popularity - a.popularity)
+    .slice(0, 4);
+
+  const chartData = trips.slice(0, 6).map((t) => ({
+    name: t.name.length > 10 ? t.name.slice(0, 10) + "…" : t.name,
+    budget: Number(t.maxBudget) || 0,
+    estimate: estimateCost(t),
+  }));
+
+  return (
+    <div className="gt-app">
+      <div style={{ background: "linear-gradient(120deg, var(--navy), #163A50)", borderRadius: 14, padding: "26px 30px", color: "#F5F1E8", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <div style={{ fontFamily: "'Fraunces',serif", fontStyle: "italic", fontSize: 14, color: "var(--gold)", marginBottom: 4 }}>Welcome back</div>
+          <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 26 }}>{user.name.split(" ")[0]}, where to next?</div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onPlanNew} style={{ background: "var(--gold)", color: "var(--navy)", border: "none", padding: "11px 18px", borderRadius: 8, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 14.5 }}>
+            <Plus size={17} /> Plan new trip
+          </button>
+          <button onClick={onLogout} style={{ background: "transparent", color: "#CBD4D8", border: "1px solid #3C5567", padding: "11px 14px", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 14.5 }}>
+            <LogOut size={16} /> Log out
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginTop: 20 }}>
+        {[
+          { label: "Trips planned", value: trips.length, icon: Compass },
+          { label: "Total budgeted", value: money(totalBudgeted), icon: Wallet },
+          { label: "Estimated spend", value: money(totalEstimated), icon: DollarSign },
+          { label: "Trips over budget", value: overCount, icon: AlertTriangle },
+        ].map((s, i) => (
+          <div key={i} style={{ background: "#FFFDF8", border: "1px dashed #D8CDB2", borderRadius: 10, padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#A69E82" }}>
+              <s.icon size={15} />
+              <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</span>
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 21, color: "var(--navy)", marginTop: 6 }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 30 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 19, color: "var(--ink)" }}>Your trips</h2>
+        </div>
+        {trips.length === 0 ? (
+          <div style={{ border: "1px dashed #D8CDB2", borderRadius: 12, padding: 30, textAlign: "center", color: "#8A8368" }}>
+            No trips yet. Click "Plan new trip" to build your first itinerary.
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6 }}>
+            {trips.map((t) => <TripCard key={t.id} trip={t} onOpen={onOpenTrip} />)}
+          </div>
+        )}
+      </div>
+
+      {chartData.length > 0 && (
+        <div style={{ marginTop: 30, background: "#FFFDF8", border: "1px solid #E4DAC0", borderRadius: 12, padding: 18 }}>
+          <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 17, color: "var(--ink)", marginBottom: 12 }}>Budget vs. estimate</h2>
+          <div style={{ width: "100%", height: 200 }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#8A8368" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#8A8368" }} />
+                <Tooltip formatter={(v) => money(v)} contentStyle={{ fontSize: 12 }} />
+                <Bar dataKey="budget" fill="#D9A441" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="estimate" fill="#0E2A3D" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 30, marginBottom: 10 }}>
+        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 19, color: "var(--ink)", marginBottom: 12 }}>Recommended destinations</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
+          {recommended.map((c) => (
+            <div key={c.id} style={{ background: "#FFFDF8", border: "1px solid #E4DAC0", borderRadius: 10, overflow: "hidden" }}>
+              {c.image && <div style={{ width: "100%", height: 90, background: `url(${c.image}) center/cover` }} />}
+              <div style={{ padding: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 15.5 }}>{c.name}</div>
+                  <span style={{ fontSize: 11, color: "var(--gold)" }}>{"★".repeat(c.popularity)}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "#8A8368", marginBottom: 8 }}>{c.country} · ~{money(c.costIndex)}/day</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {c.tags.map((t) => (
+                    <span key={t} style={{ fontSize: 10.5, background: "#F0E9D6", color: "#6E5C33", padding: "2px 7px", borderRadius: 12 }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Create Trip                                                         */
+/* ------------------------------------------------------------------ */
+
+const emptyTrip = () => ({
+  id: uid(),
+  name: "",
+  startDate: "",
+  endDate: "",
+  description: "",
+  coverPhoto: null,
+  maxBudget: "",
+  destinations: [],
+  vibes: [],
+  activities: [],
+  customActivities: [],
+  createdAt: Date.now(),
+});
+
+function CreateTrip({ onSave, onCancel }) {
+  const [trip, setTrip] = useState(emptyTrip());
+  const [errors, setErrors] = useState({});
+  const [citySearch, setCitySearch] = useState("");
+  const [affordResult, setAffordResult] = useState(null);
+  const [issues, setIssues] = useState([]);
+  const [activeDay, setActiveDay] = useState(1);
+  const totalDays = Math.max(daysBetween(trip.startDate, trip.endDate), 1);
+
+  const filteredCities = CITIES.filter(
+    (c) => c.name.toLowerCase().includes(citySearch.toLowerCase()) || c.country.toLowerCase().includes(citySearch.toLowerCase())
+  );
+
+  const toggleVibe = (v) => {
+    setTrip((t) => ({ ...t, vibes: t.vibes.includes(v) ? t.vibes.filter((x) => x !== v) : [...t.vibes, v] }));
+  };
+
+  const addDestination = (cityId) => {
+    if (trip.destinations.some((d) => d.cityId === cityId)) return;
+    setTrip((t) => ({ ...t, destinations: [...t.destinations, { cityId, days: Math.max(1, Math.floor(totalDays / (t.destinations.length + 1)) || 1) }] }));
+  };
+  const removeDestination = (cityId) => {
+    setTrip((t) => ({
+      ...t,
+      destinations: t.destinations.filter((d) => d.cityId !== cityId),
+      activities: t.activities.filter((a) => resolveActivity(t, a.activityId)?.cityId !== cityId),
+    }));
+  };
+  const setDestDays = (cityId, days) => {
+    setTrip((t) => ({ ...t, destinations: t.destinations.map((d) => d.cityId === cityId ? { ...d, days: Math.max(1, Number(days) || 1) } : d) }));
+  };
+
+  const addActivity = (activityId) => {
+    const meta = activityById(activityId);
+    setTrip((t) => ({ ...t, activities: [...t.activities, { id: uid(), activityId, day: 1, time: meta.time }] }));
+  };
+  const removeActivity = (id) => setTrip((t) => ({ ...t, activities: t.activities.filter((a) => a.id !== id) }));
+  const updateActivity = (id, patch) => setTrip((t) => ({ ...t, activities: t.activities.map((a) => a.id === id ? { ...a, ...patch } : a) }));
+
+  /* Add one of a city's "places to visit" (temple, market, museum, etc.)
+     straight into the itinerary as a free, untimed sightseeing stop. */
+  const addAttraction = (city, attraction, day) => {
+    const customId = uid();
+    const custom = {
+      id: customId,
+      cityId: city.id,
+      name: attraction.name,
+      type: attraction.type,
+      cost: 0,
+      duration: 1.5,
+      time: "10:00",
+    };
+    setTrip((t) => ({
+      ...t,
+      customActivities: [...(t.customActivities || []), custom],
+      activities: [...t.activities, { id: uid(), activityId: customId, day: day || 1, time: "10:00" }],
+    }));
+  };
+
+  const onCoverPhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3_000_000) {
+      setErrors((er) => ({ ...er, cover: "Please choose an image under 3MB." }));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setTrip((t) => ({ ...t, coverPhoto: reader.result }));
+    reader.readAsDataURL(file);
+  };
+
+  const validateBasics = () => {
+    const e = {};
+    if (!trip.name.trim()) e.name = "Give your trip a name.";
+    if (!trip.startDate) e.startDate = "Pick a start date.";
+    if (!trip.endDate) e.endDate = "Pick an end date.";
+    if (trip.startDate && trip.endDate && trip.endDate < trip.startDate) e.endDate = "End date must be after start date.";
+    if (trip.maxBudget && Number(trip.maxBudget) <= 0) e.maxBudget = "Budget must be greater than 0.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const runAfford = () => {
+    if (!trip.destinations.length) {
+      setAffordResult({ status: "unknown", est: 0, budget: Number(trip.maxBudget) || 0, message: "Add at least one destination first." });
+      return;
+    }
+    const afford = affordability(trip);
+    const suggestions = afford.status !== "within" ? cheaperSuggestions(trip) : [];
+    setAffordResult({ ...afford, suggestions });
+  };
+
+  const runFixMyTrip = () => setIssues(findIssues(trip));
+  const applyFix = (issue) => {
+    setTrip((t) => issue.fix(t));
+    setIssues((list) => list.filter((i) => i.id !== issue.id));
+  };
+
+  const save = () => {
+    if (!validateBasics()) return;
+    onSave(trip);
+  };
+
+  const suggestedActivities = useMemo(() => matchedActivities(trip), [trip.destinations, trip.vibes, trip.activities, trip.maxBudget]);
+
+  return (
+    <div className="gt-app">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A6A2B", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13.5 }}>
+          <ArrowLeft size={16} /> Back to dashboard
+        </button>
+      </div>
+
+      <h1 style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 26, color: "var(--ink)" }}>Plan a new trip</h1>
+      <p style={{ color: "#8A8368", fontSize: 14, marginBottom: 24 }}>Fill in the basics, pick destinations and a vibe, then check your budget.</p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 24, alignItems: "start" }}>
+        <div>
+          {/* Trip basics */}
+          <Section title="Trip details" icon={Compass}>
+            <Field label="Trip name" error={errors.name}>
+              <input style={inputStyle} value={trip.name} onChange={(e) => setTrip({ ...trip, name: e.target.value })} placeholder="Golden Triangle: Delhi, Agra, Jaipur" />
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Start date" error={errors.startDate}>
+                <input style={inputStyle} type="date" value={trip.startDate} onChange={(e) => setTrip({ ...trip, startDate: e.target.value })} />
+              </Field>
+              <Field label="End date" error={errors.endDate}>
+                <input style={inputStyle} type="date" value={trip.endDate} onChange={(e) => setTrip({ ...trip, endDate: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="Description">
+              <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={trip.description} onChange={(e) => setTrip({ ...trip, description: e.target.value })} placeholder="What's this trip about?" />
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Maximum budget (INR)" error={errors.maxBudget}>
+                <input style={inputStyle} type="number" min="0" value={trip.maxBudget} onChange={(e) => setTrip({ ...trip, maxBudget: e.target.value })} placeholder="150000" />
+              </Field>
+              <Field label="Cover photo (optional)" error={errors.cover}>
+                <label style={{ ...inputStyle, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#8A8368" }}>
+                  <ImageIcon size={16} /> {trip.coverPhoto ? "Photo selected" : "Upload image"}
+                  <input type="file" accept="image/*" onChange={onCoverPhoto} style={{ display: "none" }} />
+                </label>
+              </Field>
+            </div>
+            {trip.coverPhoto && (
+              <img src={trip.coverPhoto} alt="Trip cover" style={{ width: "100%", maxHeight: 160, objectFit: "cover", borderRadius: 10, marginTop: 4 }} />
+            )}
+          </Section>
+
+          {/* Vibes */}
+          <Section title="Trip vibe" icon={Sparkles} subtitle="Pick what matters most — this shapes your activity suggestions.">
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {VIBES.map((v) => {
+                const active = trip.vibes.includes(v.name);
+                return (
+                  <button key={v.name} onClick={() => toggleVibe(v.name)} style={{
+                    padding: "8px 14px", borderRadius: 20, border: `1.5px solid ${active ? v.color : "#D8CDB2"}`,
+                    background: active ? v.color : "#FFFDF8", color: active ? "#fff" : "var(--ink)",
+                    fontSize: 13.5, cursor: "pointer", fontWeight: 600
+                  }}>
+                    {v.name}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+
+          {/* Destinations */}
+          <Section title="Destinations" icon={MapPin} subtitle="Search and add the cities you'll visit.">
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <Search size={15} style={{ position: "absolute", left: 12, top: 12, color: "#A69E82" }} />
+              <input style={{ ...inputStyle, paddingLeft: 34 }} value={citySearch} onChange={(e) => setCitySearch(e.target.value)} placeholder="Search cities or countries…" />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, maxHeight: 260, overflowY: "auto", marginBottom: 14 }}>
+              {filteredCities.map((c) => {
+                const added = trip.destinations.some((d) => d.cityId === c.id);
+                return (
+                  <button key={c.id} onClick={() => (added ? removeDestination(c.id) : addDestination(c.id))} style={{
+                    textAlign: "left", padding: 0, borderRadius: 8, overflow: "hidden",
+                    border: `1.5px solid ${added ? "var(--pine)" : "#D8CDB2"}`, background: added ? "#E1EDDD" : "#FFFDF8", cursor: "pointer"
+                  }}>
+                    {c.image && <div style={{ width: "100%", height: 62, background: `url(${c.image}) center/cover` }} />}
+                    <div style={{ padding: "8px 10px" }}>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, display: "flex", justifyContent: "space-between" }}>
+                        {c.name}{added && <Check size={14} color="var(--pine)" />}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "#8A8368" }}>{c.country} · ~{money(c.costIndex)}/day</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {trip.destinations.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: "#8A8368", marginBottom: 6 }}>Days at each stop</div>
+                {trip.destinations.map((d) => {
+                  const c = cityById(d.cityId);
+                  return (
+                    <div key={d.cityId} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                      <span style={{ flex: 1, fontSize: 13.5 }}>{c.name}</span>
+                      <input type="number" min="1" value={d.days} onChange={(e) => setDestDays(d.cityId, e.target.value)} style={{ ...inputStyle, width: 64, padding: "6px 8px" }} />
+                      <button onClick={() => removeDestination(d.cityId)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rust)" }}><Trash2 size={15} /></button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+
+          {/* Places to visit per destination */}
+          {trip.destinations.length > 0 && (
+            <Section title="Places to visit" icon={Compass} subtitle="Temples, markets, museums and more — tap + to drop one into your itinerary.">
+              {trip.destinations.map((d) => {
+                const c = cityById(d.cityId);
+                if (!c) return null;
+                return (
+                  <div key={d.cityId} style={{ marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      {c.image && <div style={{ width: 40, height: 40, borderRadius: 8, background: `url(${c.image}) center/cover`, flexShrink: 0 }} />}
+                      <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 14.5 }}>{c.name}</div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 8 }}>
+                      {(c.attractions || []).map((a, i) => {
+                        const meta = ATTRACTION_TYPES[a.type] || ATTRACTION_TYPES.Landmark;
+                        return (
+                          <div key={i} style={{ border: "1px solid #E4DAC0", borderRadius: 8, padding: "8px 10px", background: "#FFFDF8", display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 16 }}>{meta.icon}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
+                              <div style={{ fontSize: 10.5, color: meta.color, fontWeight: 600 }}>{a.type}</div>
+                            </div>
+                            <button onClick={() => addAttraction(c, a, 1)} title="Add to itinerary" style={{ background: "var(--pine)", border: "none", color: "#fff", borderRadius: 6, width: 22, height: 22, cursor: "pointer", flexShrink: 0 }}>
+                              <Plus size={13} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </Section>
+          )}
+
+          {/* Smart activity matching */}
+          <Section title="Smart activity matching" icon={Wand2} subtitle="Suggested based on your destinations, budget and vibe.">
+            {trip.destinations.length === 0 ? (
+              <div style={{ color: "#A69E82", fontSize: 13.5 }}>Add a destination to see matched activities.</div>
+            ) : suggestedActivities.length === 0 ? (
+              <div style={{ color: "#A69E82", fontSize: 13.5 }}>All matching activities have been added — nice work.</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
+                {suggestedActivities.map((a) => (
+                  <div key={a.id} style={{ border: "1px solid #E4DAC0", borderRadius: 8, padding: 10, background: "#FFFDF8" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>{a.name}</div>
+                      <button onClick={() => addActivity(a.id)} style={{ background: "var(--pine)", border: "none", color: "#fff", borderRadius: 6, width: 22, height: 22, cursor: "pointer" }}><Plus size={13} /></button>
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "#8A8368", marginTop: 3 }}>{cityById(a.cityId)?.name} · {a.type} · {a.cost === 0 ? "Free" : money(a.cost)} · {a.duration}h</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          {/* Itinerary builder */}
+          {trip.activities.length > 0 && (
+            <Section title="Itinerary builder" icon={Calendar} subtitle="Organize your trip day by day — drop in a time for each stop.">
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+                {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
+                  const count = trip.activities.filter((a) => a.day === day).length;
+                  const active = activeDay === day;
+                  return (
+                    <button key={day} onClick={() => setActiveDay(day)} style={{
+                      padding: "7px 13px", borderRadius: 20, border: `1.5px solid ${active ? "var(--navy)" : "#D8CDB2"}`,
+                      background: active ? "var(--navy)" : "#FFFDF8", color: active ? "#F5F1E8" : "var(--ink)",
+                      fontSize: 12.5, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap"
+                    }}>
+                      Day {day}{count > 0 ? ` · ${count}` : ""}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {trip.activities.filter((a) => a.day === activeDay).length === 0 ? (
+                <div style={{ color: "#A69E82", fontSize: 13.5, padding: "10px 0" }}>Nothing scheduled for Day {activeDay} yet. Add activities or places to visit above, or switch days.</div>
+              ) : (
+                [...trip.activities]
+                  .filter((a) => a.day === activeDay)
+                  .sort((a, b) => timeToMin(a.time) - timeToMin(b.time))
+                  .map((a) => {
+                    const meta = resolveActivity(trip, a.activityId);
+                    if (!meta) return null;
+                    const typeMeta = ATTRACTION_TYPES[meta.type];
+                    return (
+                      <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid #EFE7D3", padding: "8px 0", flexWrap: "wrap" }}>
+                        {typeMeta && <span style={{ fontSize: 15 }}>{typeMeta.icon}</span>}
+                        <div style={{ flex: "1 1 160px", fontSize: 13.5, fontWeight: 600 }}>{meta.name}</div>
+                        <span style={{ fontSize: 11.5, color: "#8A8368" }}>{cityById(meta.cityId)?.name}</span>
+                        <label style={{ fontSize: 11.5, color: "#8A8368" }}>Day
+                          <input type="number" min="1" max={totalDays} value={a.day} onChange={(e) => updateActivity(a.id, { day: Math.min(totalDays, Math.max(1, Number(e.target.value) || 1)) })} style={{ ...inputStyle, width: 52, padding: "5px 6px", marginLeft: 4 }} />
+                        </label>
+                        <input type="time" value={a.time} onChange={(e) => updateActivity(a.id, { time: e.target.value })} style={{ ...inputStyle, width: 100, padding: "5px 6px" }} />
+                        <span style={{ fontSize: 12, fontFamily: "'IBM Plex Mono',monospace", color: "var(--navy)" }}>{meta.cost === 0 ? "Free" : money(meta.cost)}</span>
+                        <button onClick={() => removeActivity(a.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--rust)" }}><Trash2 size={14} /></button>
+                      </div>
+                    );
+                  })
+              )}
+
+              <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button onClick={runFixMyTrip} style={{ background: "#F0E9D6", border: "1px solid #D8CDB2", color: "#6E5C33", padding: "9px 16px", borderRadius: 8, cursor: "pointer", fontSize: 13.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Wand2 size={15} /> Fix my trip
+                </button>
+              </div>
+
+              {issues.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  {issues.map((iss) => (
+                    <div key={iss.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, background: "#FBEBCD", border: "1px solid #E8CC8F", borderRadius: 8, padding: "10px 12px", marginBottom: 8 }}>
+                      <div style={{ fontSize: 12.5, color: "#6E5006", display: "flex", gap: 8 }}>
+                        <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} /> {iss.message}
+                      </div>
+                      <button onClick={() => applyFix(iss)} style={{ background: "var(--navy)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>Apply fix</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {issues.length === 0 && trip.activities.length > 0 && (
+                <p style={{ fontSize: 12.5, color: "#8A8368", marginTop: 10 }}>Click "Fix my trip" to check for time conflicts or budget issues.</p>
+              )}
+            </Section>
+          )}
+        </div>
+
+        {/* Sidebar summary */}
+        <div style={{ position: "sticky", top: 12 }}>
+          <div style={{ background: "var(--navy)", borderRadius: 14, padding: 20, color: "#F5F1E8" }}>
+            <div style={{ fontFamily: "'Fraunces',serif", fontStyle: "italic", fontSize: 13, color: "var(--gold)" }}>Boarding pass</div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 19, marginTop: 2 }}>{trip.name || "Untitled trip"}</div>
+            <div style={{ fontSize: 12.5, color: "#B7C2C8", marginTop: 6 }}>{totalDays} day{totalDays !== 1 ? "s" : ""} · {trip.destinations.length} stop{trip.destinations.length !== 1 ? "s" : ""}</div>
+            <div style={{ borderTop: "1px dashed #3C5567", margin: "14px 0", position: "relative" }}>
+              <div style={{ position: "absolute", left: -20, top: -8, width: 16, height: 16, borderRadius: "50%", background: "var(--paper)" }} />
+              <div style={{ position: "absolute", right: -20, top: -8, width: 16, height: 16, borderRadius: "50%", background: "var(--paper)" }} />
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24 }}>{money(estimateCost(trip))}</div>
+            <div style={{ fontSize: 11.5, color: "#8FA3AC" }}>estimated cost{trip.maxBudget ? ` · budget ${money(trip.maxBudget)}` : ""}</div>
+
+            <button onClick={runAfford} style={{ width: "100%", marginTop: 16, background: "var(--gold)", color: "var(--navy)", border: "none", padding: "10px 0", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 13.5 }}>
+              Can I afford this trip?
+            </button>
+
+            {affordResult && (
+              <div style={{ marginTop: 14, background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: 12 }}>
+                {affordResult.message ? (
+                  <div style={{ fontSize: 12.5, color: "#E8CC8F" }}>{affordResult.message}</div>
+                ) : (
+                  <>
+                    <StatusBadge status={affordResult.status} />
+                    <div style={{ fontSize: 12, color: "#B7C2C8", marginTop: 8 }}>
+                      Estimated {money(affordResult.est)} against a {money(affordResult.budget)} budget
+                      {affordResult.status !== "within" ? ` (${money(Math.abs(affordResult.diff))} ${affordResult.diff > 0 ? "over" : "under"})` : ""}.
+                    </div>
+                    {affordResult.suggestions?.length > 0 && (
+                      <ul style={{ marginTop: 8, paddingLeft: 16, fontSize: 12, color: "#DCE4E7" }}>
+                        {affordResult.suggestions.map((s, i) => <li key={i} style={{ marginBottom: 4 }}>{s}</li>)}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button onClick={save} style={{ width: "100%", marginTop: 14, background: "var(--pine)", color: "#fff", border: "none", padding: "13px 0", borderRadius: 10, fontWeight: 700, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            Save trip <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Trip Calendar — vertical timeline view of the full itinerary        */
+/* ------------------------------------------------------------------ */
+
+function dateForDay(startDate, day) {
+  if (!startDate) return null;
+  const d = new Date(startDate + "T00:00:00");
+  d.setDate(d.getDate() + (day - 1));
+  return d;
+}
+function formatDate(d) {
+  if (!d) return "";
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+function TripTimeline({ trip, onBack }) {
+  const totalDays = Math.max(daysBetween(trip.startDate, trip.endDate), 1);
+  const afford = affordability(trip);
+  const cover = trip.coverPhoto || cityById(trip.destinations[0]?.cityId)?.image;
+
+  const byDay = {};
+  trip.activities.forEach((a) => {
+    (byDay[a.day] = byDay[a.day] || []).push(a);
+  });
+
+  return (
+    <div className="gt-app">
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A6A2B", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13.5, marginBottom: 18 }}>
+        <ArrowLeft size={16} /> Back to dashboard
+      </button>
+
+      <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid #E4DAC0", marginBottom: 24 }}>
+        {cover && <div style={{ width: "100%", height: 170, background: `url(${cover}) center/cover` }} />}
+        <div style={{ background: "linear-gradient(120deg, var(--navy), #163A50)", padding: "20px 26px", color: "#F5F1E8", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14 }}>
+          <div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontStyle: "italic", fontSize: 13, color: "var(--gold)", marginBottom: 4 }}>Trip calendar</div>
+            <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 24 }}>{trip.name}</div>
+            <div style={{ fontSize: 12.5, color: "#B7C2C8", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+              <Calendar size={13} /> {trip.startDate || "TBD"} → {trip.endDate || "TBD"} · {totalDays} day{totalDays !== 1 ? "s" : ""}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <StatusBadge status={afford.status} />
+            <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 20, marginTop: 8 }}>{money(afford.est)}</div>
+            <div style={{ fontSize: 11, color: "#8FA3AC" }}>estimated cost</div>
+          </div>
+        </div>
+      </div>
+
+      {trip.activities.length === 0 ? (
+        <div style={{ border: "1px dashed #D8CDB2", borderRadius: 12, padding: 30, textAlign: "center", color: "#8A8368" }}>
+          This trip doesn't have any scheduled stops yet.
+        </div>
+      ) : (
+        Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
+          const items = (byDay[day] || [])
+            .map((a) => ({ ...a, meta: resolveActivity(trip, a.activityId) }))
+            .filter((a) => a.meta)
+            .sort((a, b) => timeToMin(a.time) - timeToMin(b.time));
+          if (items.length === 0) return null;
+          const dateLabel = formatDate(dateForDay(trip.startDate, day));
+          return (
+            <div key={day} style={{ marginBottom: 26 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+                <div style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 17, color: "var(--ink)" }}>Day {day}</div>
+                {dateLabel && <div style={{ fontSize: 12.5, color: "#8A8368" }}>{dateLabel}</div>}
+              </div>
+              <div style={{ position: "relative", paddingLeft: 26 }}>
+                <div style={{ position: "absolute", left: 7, top: 6, bottom: 6, width: 2, background: "#E4DAC0" }} />
+                {items.map((a, idx) => {
+                  const city = cityById(a.meta.cityId);
+                  const typeMeta = ATTRACTION_TYPES[a.meta.type];
+                  return (
+                    <div key={a.id} style={{ position: "relative", marginBottom: idx === items.length - 1 ? 0 : 16 }}>
+                      <div style={{ position: "absolute", left: -26, top: 4, width: 16, height: 16, borderRadius: "50%", background: "var(--gold)", border: "3px solid var(--paper)", boxShadow: "0 0 0 1.5px var(--navy)" }} />
+                      <div style={{ background: "#FFFDF8", border: "1px solid #E4DAC0", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12.5, color: "var(--navy)", minWidth: 52 }}>{a.time}</div>
+                        {typeMeta && <span style={{ fontSize: 16 }}>{typeMeta.icon}</span>}
+                        <div style={{ flex: "1 1 160px" }}>
+                          <div style={{ fontWeight: 700, fontSize: 13.5 }}>{a.meta.name}</div>
+                          <div style={{ fontSize: 11.5, color: "#8A8368", display: "flex", alignItems: "center", gap: 4 }}>
+                            <MapPin size={11} /> {city?.name || "—"}{a.meta.duration ? ` · ${a.meta.duration}h` : ""}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 12, fontFamily: "'IBM Plex Mono',monospace", color: "var(--rust)" }}>{a.meta.cost === 0 ? "Free" : money(a.meta.cost)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, subtitle, children }) {
+  return (
+    <div style={{ background: "#FFFDF8", border: "1px solid #E4DAC0", borderRadius: 12, padding: 18, marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: subtitle ? 2 : 12 }}>
+        <Icon size={16} color="var(--rust)" />
+        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 16.5, color: "var(--ink)" }}>{title}</h2>
+      </div>
+      {subtitle && <p style={{ fontSize: 12.5, color: "#8A8368", marginBottom: 12 }}>{subtitle}</p>}
+      {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Error boundary — surfaces crashes instead of a frozen/blank screen  */
+/* ------------------------------------------------------------------ */
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    console.error("GlobeTrotter crashed:", error, info);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ fontFamily: "'IBM Plex Sans',sans-serif", padding: 24, maxWidth: 640, margin: "0 auto" }}>
+          <div style={{ background: "#F6DAD2", border: "1px solid #E0A996", borderRadius: 10, padding: 18, color: "#7A1F0C" }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>GlobeTrotter hit an error</div>
+            <div style={{ fontSize: 13, fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
+              {String(this.state.error?.message || this.state.error)}
+            </div>
+            <button onClick={() => this.setState({ error: null })} style={{ marginTop: 12, padding: "8px 14px", borderRadius: 6, border: "none", background: "#7A1F0C", color: "#fff", cursor: "pointer" }}>
+              Try again
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Root App                                                            */
+/* ------------------------------------------------------------------ */
+
+function AppInner() {
+  const [booted, setBooted] = useState(false);
+  const [user, setUser] = useState(null);
+  const [trips, setTrips] = useState([]);
+  const [screen, setScreen] = useState("login");
+  const [authMode, setAuthMode] = useState("login");
+  const [selectedTrip, setSelectedTrip] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const session = await getSession();
+      if (session?.email) {
+        const u = await getUser(session.email);
+        if (u) {
+          setUser(u);
+          setTrips(await getTrips(u.email));
+          setScreen("dashboard");
+        }
+      }
+      setBooted(true);
+    })();
+  }, []);
+
+  const handleAuthed = async (u) => {
+    setUser(u);
+    setTrips(await getTrips(u.email));
+    setScreen("dashboard");
+  };
+
+  const handleLogout = async () => {
+    await clearSession();
+    setUser(null);
+    setTrips([]);
+    setScreen("login");
+    setAuthMode("login");
+  };
+
+  const handleSaveTrip = async (trip) => {
+    const updated = [trip, ...trips];
+    setTrips(updated);
+    await saveTrips(user.email, updated);
+    setSelectedTrip(trip);
+    setScreen("tripCalendar");
+  };
+
+  const handleOpenTrip = (trip) => {
+    setSelectedTrip(trip);
+    setScreen("tripCalendar");
+  };
+
+  return (
+    <div style={{ fontFamily: "'IBM Plex Sans',sans-serif", padding: "24px 16px", minHeight: 500 }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+        .gt-app { --navy:#0E2A3D; --paper:#F2E9D8; --gold:#D9A441; --rust:#C1502E; --pine:#2F5233; --ink:#1B1B18; }
+        .gt-app input:focus, .gt-app textarea:focus { border-color: var(--gold) !important; box-shadow: 0 0 0 3px rgba(217,164,65,0.25); }
+        @media (max-width: 720px) { .gt-hide-sm { display: none; } }
+        @media (min-width: 721px) { .gt-hide-lg { display: none; } }
+      `}</style>
+
+      {!booted ? (
+        <div style={{ textAlign: "center", padding: 60, color: "#8A8368" }}>Loading GlobeTrotter…</div>
+      ) : screen === "login" ? (
+        <div style={{ maxWidth: 920, margin: "0 auto" }}>
+          <AuthScreen mode={authMode} setMode={setAuthMode} onAuthed={handleAuthed} />
+        </div>
+      ) : screen === "dashboard" ? (
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <Dashboard user={user} trips={trips} onPlanNew={() => setScreen("createTrip")} onLogout={handleLogout} onOpenTrip={handleOpenTrip} />
+        </div>
+      ) : screen === "createTrip" ? (
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <CreateTrip onSave={handleSaveTrip} onCancel={() => setScreen("dashboard")} />
+        </div>
+      ) : screen === "tripCalendar" && selectedTrip ? (
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <TripTimeline trip={selectedTrip} onBack={() => setScreen("dashboard")} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppInner />
+    </ErrorBoundary>
+  );
+}
